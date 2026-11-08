@@ -1,125 +1,96 @@
-        "Fuel_Price",
-        "CPI",
-        "Unemployment"
-    ]
-
-    faktor_tersedia = [
-        kolom for kolom in faktor_ekonomi
-        if kolom in data.columns
-    ]
-
-    if faktor_tersedia:
-        hasil_korelasi = (
-            data[faktor_tersedia + ["Weekly_Sales"]]
-            .corr(numeric_only=True)["Weekly_Sales"]
-            .drop("Weekly_Sales")
-        )
-
-        tabel_korelasi = hasil_korelasi.reset_index()
-        tabel_korelasi.columns = [
-            "Faktor Ekonomi",
-            "Hubungan dengan Penjualan"
-        ]
-
-        nama_faktor = {
-            "Temperature": "Suhu",
-            "Fuel_Price": "Harga Bahan Bakar",
-            "CPI": "Indeks Harga Konsumen",
-            "Unemployment": "Tingkat Pengangguran"
-        }
-
-        tabel_korelasi["Faktor Ekonomi"] = (
-            tabel_korelasi["Faktor Ekonomi"].map(nama_faktor)
-        )
-
-        st.dataframe(
-            tabel_korelasi.style.format({
-                "Hubungan dengan Penjualan": "{:.3f}"
-            }),
-            use_container_width=True,
-            hide_index=True
-        )
-
-        st.markdown("**Keputusan:**")
-        st.write(
-            "Faktor ekonomi tidak sebaiknya digunakan sebagai satu-satunya "
-            "dasar dalam menentukan strategi penjualan karena hubungan "
-            "korelasinya dengan penjualan pada data ini relatif lemah."
-        )
-
-        st.markdown("**Langkah yang dapat dilakukan:**")
-        st.write("""
-        - Tetap memperhatikan perubahan kondisi ekonomi.
-        - Menggabungkan informasi ekonomi dengan pola penjualan.
-        - Mempertimbangkan faktor lain seperti promosi dan kebutuhan pelanggan.
-        """)
-
-        st.caption(
-            "Nilai korelasi menunjukkan hubungan, bukan sebab-akibat."
-        )
-    else:
-        st.info("Kolom faktor ekonomi tidak tersedia dalam data.")
-
-    # ------------------------------------------
-    # RINGKASAN KEPUTUSAN
-    # ------------------------------------------
-
-    st.divider()
-    st.subheader("Ringkasan Keputusan")
-
-    ringkasan_keputusan = pd.DataFrame({
-        "Hasil Analisis": [
-            "Kinerja toko",
-            "Penjualan hari libur",
-            "Penjualan bulanan",
-            "Target penjualan",
-            "Faktor ekonomi"
-        ],
-        "Keputusan": [
-            "Mengevaluasi toko dengan penjualan rendah",
-            "Mempersiapkan operasional menjelang hari libur",
-            "Menyusun strategi pemasaran berdasarkan bulan",
-            "Menetapkan target penjualan setiap toko",
-            "Memantau perubahan faktor ekonomi"
-        ],
-        "Tujuan": [
-            "Meningkatkan kinerja toko",
-            "Memanfaatkan peluang penjualan hari libur",
-            "Mengoptimalkan penjualan setiap bulan",
-            "Memantau perkembangan penjualan",
-            "Mendukung pengambilan keputusan"
-        ]
-    })
-
-    st.dataframe(
-        ringkasan_keputusan,
-        use_container_width=True,
-        hide_index=True
-    )
-
-    st.caption(
-        "Catatan: Rekomendasi dibuat berdasarkan data historis penjualan "
-        "Walmart tahun 2010–2012. Rekomendasi ini merupakan usulan berdasarkan "
-        "hasil analisis, bukan bukti bahwa Walmart benar-benar menerapkannya."
-    )
-
-    # ------------------------------------------
-    # UNDUH DATA
-    # ------------------------------------------
-
-    st.divider()
-    st.subheader("Unduh Data Analisis")
-
-    st.download_button(
-        "Unduh Data CSV",
-        data=data.to_csv(index=False).encode("utf-8"),
-        file_name="Walmart_Filtered.csv",
-        mime="text/csv"
-    )
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.express as px
 
 # ==========================================
-# 6. KAKI HALAMAN
+# 1. PENGATURAN HALAMAN
 # ==========================================
 
+st.set_page_config(
+    page_title="Walmart Retail BI",
+    page_icon="📊",
+    layout="wide"
+)
+
+# ==========================================
+# 2. MEMUAT DATA
+# ==========================================
+
+@st.cache_data
+def load_data():
+    df = pd.read_csv("Walmart_Cleaned.csv")
+
+    # File hasil pembersihan menggunakan format tanggal YYYY-MM-DD.
+    # Baris ini juga tetap dapat membaca format tanggal lain.
+    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+
+    df = df.dropna(subset=["Date", "Weekly_Sales", "Store"])
+
+    # Memastikan kolom numerik terbaca sebagai angka
+    numeric_columns = [
+        "Store", "Weekly_Sales", "Holiday_Flag",
+        "Temperature", "Fuel_Price", "CPI", "Unemployment"
+    ]
+
+    for column in numeric_columns:
+        if column in df.columns:
+            df[column] = pd.to_numeric(df[column], errors="coerce")
+
+    df = df.dropna(subset=["Store", "Weekly_Sales"])
+    df["Store"] = df["Store"].astype(int)
+
+    return df.sort_values("Date")
+
+
+df = load_data()
+
+if df.empty:
+    st.error("Data tidak ditemukan atau tidak memiliki baris yang dapat digunakan.")
+    st.stop()
+
+# ==========================================
+# 3. PENYARINGAN DATA
+# ==========================================
+
+st.sidebar.title("📊 Walmart Retail BI")
+st.sidebar.caption("Dasbor Analisis Penjualan Walmart")
 st.sidebar.divider()
-st.sidebar.caption("Proyek Business Intelligence | Walmart Retail")
+
+tanggal_awal = df["Date"].min().date()
+tanggal_akhir = df["Date"].max().date()
+
+rentang_tanggal = st.sidebar.date_input(
+    "Pilih Rentang Tanggal",
+    value=(tanggal_awal, tanggal_akhir),
+    min_value=tanggal_awal,
+    max_value=tanggal_akhir
+)
+
+semua_toko = sorted(df["Store"].dropna().unique())
+
+toko_dipilih = st.sidebar.multiselect(
+    "Pilih Toko",
+    options=semua_toko,
+    default=semua_toko
+)
+
+if not toko_dipilih:
+    st.warning("Silakan pilih setidaknya satu toko pada bagian penyaringan.")
+    st.stop()
+
+if isinstance(rentang_tanggal, (tuple, list)) and len(rentang_tanggal) == 2:
+    tanggal_mulai, tanggal_selesai = rentang_tanggal
+else:
+    tanggal_mulai = tanggal_awal
+    tanggal_selesai = tanggal_akhir
+
+data = df[
+    (df["Date"].dt.date >= tanggal_mulai) &
+    (df["Date"].dt.date <= tanggal_selesai) &
+    (df["Store"].isin(toko_dipilih))
+].copy()
+
+if data.empty:
+    st.warning("Tidak ada data untuk pilihan penyaringan tersebut. Silakan ubah penyaringan.")
+    st.stop()
