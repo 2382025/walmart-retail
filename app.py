@@ -16,7 +16,7 @@ Susunan aplikasi:
     4. Faktor Eksternal      - suhu, BBM, CPI, pengangguran
     5. Pusat Keputusan       - rekomendasi keputusan berbasis data + simulasi what-if
 
-Disusun oleh : Kelompok Mahasiswa
+Disusun oleh : Kelompok 2
 Mata Kuliah  : Business Intelligence / Analitik Data
 """
 
@@ -96,9 +96,9 @@ st.markdown(
     h3 {{ color: {DARK}; }}
     </style>
     <div class="hero">
-      <h1>🛒 Walmart Business Intelligence</h1>
+      <h1>🛒 Decision Making for Walmart</h1>
       <p>Dashboard Pendukung Pengambilan Keputusan Berbasis Data Penjualan Mingguan</p>
-      <div class="meta">Proyek Kelompok Mahasiswa &middot; Analisis Data Penjualan Ritel</div>
+      <div class="meta">Kelompok 2 &middot; Bryan, Hizkia, Rico, Grace, Loyar</div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -585,7 +585,7 @@ st.sidebar.caption(f"Data aktif: **{len(df):,} baris** · "
 # TAB
 # ----------------------------------------------------------------------------
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📊 Ringkasan Eksekutif", "🏬 Analisis Toko", "📅 Musiman & Hari Libur",
+    "📊 Ringkasan", "🏬 Analisis Toko", "📅 Musiman & Hari Libur",
     "🌡️ Faktor Eksternal", "🎯 Pusat Keputusan"])
 
 # ============================================================================
@@ -593,11 +593,7 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 # ============================================================================
 with tab1:
     st.markdown("### Gambaran Umum Kinerja Penjualan")
-    st.markdown(
-        "Bagian ini menyajikan ringkasan indikator utama sebagai titik tolak analisis. "
-        "Angka-angka yang ditampilkan merupakan hasil agregasi dari data yang telah difilter "
-        "pada sidebar, sehingga pembaca dapat menyesuaikan cakupan analisis sesuai kebutuhan."
-    )
+  
 
     g_all, g_years = overall_growth(df_all[df_all.Store.isin(sel_stores)])
     c1, c2, c3, c4 = st.columns(4)
@@ -670,7 +666,7 @@ with tab1:
 with tab2:
     st.markdown("### Klasifikasi dan Kinerja per Toko")
     st.markdown(
-        "Bagian ini membahas karakteristik setiap toko dari tiga sudut pandang: kontribusi "
+        "Karakteristik setiap toko dari tiga sudut pandang: kontribusi "
         "penjualan (Pareto/ABC), pertumbuhan antar tahun, dan volatilitas penjualan. "
         "Ketiga sudut pandang ini kami gunakan sebagai dasar penentuan prioritas tindakan."
     )
@@ -703,7 +699,7 @@ with tab2:
 
     interpretasi(
         "Interpretasi",
-        "Prinsip Pareto terkonfirmasi pada data ini: sebagian kecil toko menyumbang mayoritas "
+        "Sebagian kecil toko menyumbang mayoritas "
         "penjualan. Oleh karena itu, kami menilai bahwa prioritas alokasi sumber daya sebaiknya "
         "diberikan kepada toko kelas A, tanpa mengabaikan upaya efisiensi pada kelas C."
     )
@@ -773,7 +769,7 @@ with tab2:
 with tab3:
     st.markdown("### Pola Musiman dan Dampak Hari Libur")
     st.markdown(
-        "Bagian ini mengkaji bagaimana penjualan berfluktuasi sepanjang tahun serta sejauh "
+        "Penjualan berfluktuasi sepanjang tahun serta sejauh "
         "mana pekan-pekan libur memberikan dampak berbeda dibanding pekan biasa. Hasil analisis "
         "menjadi dasar penentuan kalender puncak dan realokasi anggaran promosi."
     )
