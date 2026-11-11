@@ -16,7 +16,7 @@ Susunan aplikasi:
     4. Faktor Eksternal      - suhu, BBM, CPI, pengangguran
     5. Pusat Keputusan       - rekomendasi keputusan berbasis data + simulasi what-if
 
-Tema UI   : Minecraft (pixel-art / blocky / 8-bit)
+Tema UI   : Walmart Brand (Spark Blue + Sun Yellow)
 Disusun oleh : Kelompok 2
 Mata Kuliah  : Business Intelligence / Analitik Data
 """
@@ -34,14 +34,23 @@ import streamlit as st
 # ----------------------------------------------------------------------------
 st.set_page_config(
     page_title="Walmart BI - Decision Support",
-    page_icon="⛏️",
+    page_icon="🛒",
     layout="wide",
 )
 
-# Palet warna "Minecraft Edition"
-BLUE, YELLOW, DARK = "#5B9BD5", "#FFAA00", "#2D1D0D"   # sky-blue, gold, dark-wood
-RED, GREEN, GREY = "#C0392B", "#17DD62", "#8B8B8B"     # redstone, emerald, stone
-CLASS_COLOR = {"A": "#17DD62", "B": "#FFAA00", "C": "#8B8B8B"}
+# Palet warna resmi Walmart
+WALMART_BLUE   = "#0071CE"
+WALMART_DARK   = "#041E42"
+WALMART_YELLOW = "#FFC220"
+WALMART_SUN    = "#FFA000"
+WALMART_LIGHT  = "#78B9E7"
+WALMART_GREEN  = "#2A8703"
+WALMART_RED    = "#DE1C24"
+WALMART_GREY   = "#9AA5B1"
+
+BLUE, YELLOW, DARK = WALMART_BLUE, WALMART_YELLOW, WALMART_DARK
+RED, GREEN, GREY = WALMART_RED, WALMART_GREEN, WALMART_GREY
+CLASS_COLOR = {"A": WALMART_BLUE, "B": WALMART_YELLOW, "C": WALMART_GREY}
 
 MONTH_ID = {1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr", 5: "Mei", 6: "Jun",
             7: "Jul", 8: "Agu", 9: "Sep", 10: "Okt", 11: "Nov", 12: "Des"}
@@ -53,429 +62,456 @@ DEFAULT_FILE = "Walmart_Cleaned.csv"
 
 
 # ----------------------------------------------------------------------------
-# GAYA VISUAL — MINECRAFT EDITION
+# GAYA VISUAL — WALMART EDITION
 # ----------------------------------------------------------------------------
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Silkscreen:wght@400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
     /* ============================== GLOBAL ============================== */
-    html, body, [class*="css"], .stMarkdown, p, li, span, div {
-        font-family: 'VT323', 'Courier New', monospace !important;
-        font-size: 1.2rem !important;
-        line-height: 1.45 !important;
-        letter-spacing: 0.4px;
+    html, body, [class*="css"], p, li, span, label, .stMarkdown, div {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        color: #2E2F32;
     }
+    p, li { font-size: 1rem !important; line-height: 1.6 !important; }
 
-    /* Latar utama: tekstur "dirt block" */
     .stApp {
-        background-color: #2E2418;
-        background-image:
-            repeating-linear-gradient(0deg,  rgba(0,0,0,0.18) 0px, rgba(0,0,0,0.18) 16px, transparent 16px, transparent 32px),
-            repeating-linear-gradient(90deg, rgba(0,0,0,0.18) 0px, rgba(0,0,0,0.18) 16px, transparent 16px, transparent 32px),
-            radial-gradient(circle at 20% 25%, #4A3826 0%, transparent 45%),
-            radial-gradient(circle at 80% 75%, #4A3826 0%, transparent 45%);
-        background-size: 32px 32px, 32px 32px, 100% 100%, 100% 100%;
+        background:
+            radial-gradient(circle at 0% 0%, #EAF4FC 0%, transparent 45%),
+            radial-gradient(circle at 100% 100%, #FFF5D6 0%, transparent 45%),
+            linear-gradient(180deg, #F8FAFD 0%, #F1F6FB 100%);
         background-attachment: fixed;
     }
 
-    /* Kontainer utama transparan agar latar terlihat */
-    [data-testid="stAppViewContainer"],
-    [data-testid="stMain"] { background: transparent !important; }
+    [data-testid="stAppViewContainer"], [data-testid="stMain"] { background: transparent !important; }
 
-    /* Header atas */
     [data-testid="stHeader"] {
-        background: rgba(30, 20, 10, 0.65) !important;
-        backdrop-filter: blur(2px);
+        background: rgba(255, 255, 255, 0.85) !important;
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid #E6ECF3;
     }
 
     /* ============================== HEADINGS ============================ */
     h1, h2 {
-        font-family: 'Press Start 2P', cursive !important;
-        color: #FFAA00 !important;
-        text-shadow:
-            3px 3px 0 #000,
-            4px 4px 0 #8B0000;
-        letter-spacing: 1px;
-        line-height: 1.6 !important;
+        font-family: 'Poppins', sans-serif !important;
+        color: #041E42 !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.3px;
+        line-height: 1.3 !important;
     }
-    h1 { font-size: 1.35rem !important; }
-    h2 { font-size: 1.05rem !important; }
+    h1 { font-size: 1.7rem !important; }
+    h2 { font-size: 1.35rem !important; }
 
     h3 {
-        font-family: 'Silkscreen', cursive !important;
-        color: #4AEDD9 !important;
-        font-size: 1.2rem !important;
-        text-shadow: 2px 2px 0 #000;
-        border-bottom: 3px dashed #FFAA00;
-        padding-bottom: 0.5rem;
+        font-family: 'Poppins', sans-serif !important;
+        color: #041E42 !important;
+        font-weight: 700 !important;
+        font-size: 1.35rem !important;
         margin-top: 1.6rem !important;
+        padding-bottom: 0.5rem;
+        border-bottom: 3px solid #FFC220;
+        display: inline-block;
+        letter-spacing: -0.2px;
     }
+
     h4 {
-        font-family: 'Silkscreen', cursive !important;
-        color: #7CBD56 !important;
-        font-size: 1.05rem !important;
-        text-shadow: 2px 2px 0 #000;
+        font-family: 'Poppins', sans-serif !important;
+        color: #0071CE !important;
+        font-weight: 700 !important;
+        font-size: 1.1rem !important;
+        margin-top: 1.2rem !important;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
     }
 
     /* ============================== HERO ================================= */
     .hero {
-        background:
-            repeating-linear-gradient(90deg, #C19A6B 0px, #C19A6B 60px, #B08858 60px, #B08858 62px),
-            #C19A6B;
-        border: 6px solid #5D3A1A;
-        box-shadow:
-            inset -6px -6px 0 #8B6B4A,
-            inset  6px  6px 0 #D9B98F,
-            10px 10px 0 rgba(0,0,0,0.55);
-        padding: 1.5rem 2rem;
-        margin-bottom: 1.4rem;
-        color: #3D2817;
+        background: linear-gradient(135deg, #0071CE 0%, #0057A8 55%, #041E42 100%);
+        border-radius: 22px;
+        padding: 2rem 2.4rem;
+        color: white;
+        margin-bottom: 1.6rem;
+        box-shadow: 0 14px 36px rgba(0, 113, 206, 0.28);
         position: relative;
+        overflow: hidden;
     }
-    .hero h1 {
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: -120px; right: -80px;
+        width: 420px; height: 420px;
+        background: radial-gradient(circle, rgba(255,194,32,0.22) 0%, transparent 65%);
+        pointer-events: none;
+    }
+    .hero::after {
+        content: '';
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        height: 6px;
+        background: linear-gradient(90deg, #FFC220 0%, #FFA000 100%);
+    }
+    .hero-inner {
+        display: flex;
+        align-items: center;
+        gap: 1.6rem;
+        position: relative;
+        z-index: 1;
+    }
+    .hero-spark {
+        flex-shrink: 0;
+        filter: drop-shadow(0 6px 16px rgba(255,194,32,0.55));
+    }
+    .hero-text h1 {
         color: #FFFFFF !important;
-        margin: 0;
-        font-size: 1.35rem !important;
-        text-shadow:
-            3px 3px 0 #000,
-            4px 4px 0 #8B0000,
-            5px 5px 0 rgba(0,0,0,0.4);
+        margin: 0 !important;
+        font-size: 1.75rem !important;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
-    .hero p {
-        color: #3D2817 !important;
-        margin: 0.8rem 0 0 0 !important;
-        font-size: 1.15rem !important;
-        font-weight: bold;
+    .hero-text p {
+        color: #E8F2FC !important;
+        margin: 0.5rem 0 0 0 !important;
+        font-size: 1.02rem !important;
     }
-    .hero .meta {
-        color: #5D3A1A !important;
-        margin-top: 0.6rem !important;
-        font-size: 1rem !important;
-        font-family: 'VT323', monospace !important;
+    .hero-text .slogan {
+        color: #FFC220 !important;
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 700 !important;
+        font-style: italic;
+        font-size: 0.95rem !important;
+        margin-top: 0.7rem !important;
+        letter-spacing: 0.3px;
+    }
+    .hero-text .meta {
+        color: #B8D4EC !important;
+        font-size: 0.85rem !important;
+        margin-top: 0.55rem !important;
     }
 
     /* ============================== INTERPRETASI ======================== */
     .interp {
-        background: #D9B98F;
-        border: 4px solid #5D3A1A;
-        box-shadow:
-            inset -4px -4px 0 #A88050,
-            inset  4px  4px 0 #F0DCB8,
-            8px 8px 0 rgba(0,0,0,0.45);
-        padding: 1rem 1.2rem;
+        background: linear-gradient(135deg, #EAF4FC 0%, #F5FAFE 100%);
+        border-left: 5px solid #0071CE;
+        border-radius: 14px;
+        padding: 1.1rem 1.4rem;
         margin: 1rem 0;
-        color: #2D1D0D;
-        font-size: 1.15rem !important;
+        color: #1A2B4A;
+        box-shadow: 0 3px 14px rgba(0, 113, 206, 0.08);
     }
     .interp > b:first-child {
-        color: #8B0000;
-        font-family: 'Silkscreen', cursive;
-        font-size: 0.95rem;
-        display: block;
-        margin-bottom: 0.4rem;
+        color: #0071CE;
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 1.2px;
+        display: block;
+        margin-bottom: 0.5rem;
     }
 
     /* ============================== CATATAN ============================= */
     .note {
-        background: #FFE97F;
-        border: 4px solid #B8952B;
-        box-shadow:
-            inset -4px -4px 0 #C9A63B,
-            inset  4px  4px 0 #FFF3B8,
-            8px 8px 0 rgba(0,0,0,0.45);
-        padding: 1rem 1.2rem;
+        background: linear-gradient(135deg, #FFF8E1 0%, #FFF3C4 100%);
+        border-left: 5px solid #FFC220;
+        border-radius: 14px;
+        padding: 1.1rem 1.4rem;
         margin: 1rem 0;
-        color: #4A3520;
-        font-size: 1.1rem !important;
+        color: #5C4400;
+        box-shadow: 0 3px 14px rgba(255, 194, 32, 0.18);
     }
     .note b {
-        color: #8B0000;
-        font-family: 'Silkscreen', cursive;
-        font-size: 0.95rem;
+        color: #B77700;
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
 
     /* ============================== METRICS ============================= */
     [data-testid="stMetric"] {
-        background: #5A5A5A;
-        border: 4px solid #2D2D2D;
-        box-shadow:
-            inset -4px -4px 0 #2D2D2D,
-            inset  4px  4px 0 #9B9B9B,
-            6px 6px 0 rgba(0,0,0,0.55);
-        padding: 1rem 1.1rem;
+        background: #FFFFFF;
+        border-radius: 18px;
+        padding: 1.15rem 1.3rem;
+        border: 1px solid rgba(0, 113, 206, 0.12);
+        border-top: 4px solid #0071CE;
+        box-shadow: 0 4px 16px rgba(4, 30, 66, 0.07);
+        transition: transform 0.22s ease, box-shadow 0.22s ease;
+    }
+    [data-testid="stMetric"]:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 26px rgba(0, 113, 206, 0.16);
+        border-top-color: #FFC220;
     }
     [data-testid="stMetricLabel"] {
-        font-family: 'Silkscreen', cursive !important;
-        color: #FFAA00 !important;
-        font-size: 0.72rem !important;
+        font-family: 'Poppins', sans-serif !important;
+        color: #4A5568 !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.7px;
     }
     [data-testid="stMetricValue"] {
-        font-family: 'VT323', monospace !important;
-        font-size: 1.9rem !important;
-        color: #FFFFFF !important;
-        text-shadow: 2px 2px 0 #000;
-        font-weight: bold;
-        line-height: 1.2 !important;
+        font-family: 'Poppins', sans-serif !important;
+        color: #0071CE !important;
+        font-size: 1.85rem !important;
+        font-weight: 800 !important;
+        line-height: 1.15 !important;
+        margin-top: 0.15rem;
     }
     [data-testid="stMetricDelta"] {
-        font-family: 'VT323', monospace !important;
-        font-size: 1.05rem !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.92rem !important;
+        font-weight: 600;
     }
 
     /* ============================== SIDEBAR ============================= */
     [data-testid="stSidebar"] {
-        background:
-            repeating-linear-gradient(0deg, #3D2817 0px, #3D2817 16px, #4A3528 16px, #4A3528 32px);
-        border-right: 6px solid #1E130A;
+        background: linear-gradient(180deg, #FFFFFF 0%, #F5FAFE 100%);
+        border-right: 1px solid #E6ECF3;
+        box-shadow: 2px 0 14px rgba(4, 30, 66, 0.04);
     }
-    [data-testid="stSidebar"] h2,
-    [data-testid="stSidebar"] h3 {
-        color: #FFAA00 !important;
-        font-family: 'Silkscreen', cursive !important;
-        text-shadow: 2px 2px 0 #000;
-    }
-    [data-testid="stSidebar"] .stMarkdown p,
-    [data-testid="stSidebar"] .stMarkdown li {
-        color: #F5DEB3 !important;
+    [data-testid="stSidebar"] h2 {
+        color: #0071CE !important;
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 800 !important;
+        font-size: 1.25rem !important;
+        padding-bottom: 0.5rem;
+        border-bottom: 3px solid #FFC220;
+        display: inline-block;
     }
     [data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
-        color: #FFAA00 !important;
-        font-family: 'Silkscreen', cursive !important;
-        font-size: 0.8rem !important;
+        color: #041E42 !important;
+        font-weight: 700 !important;
+        font-size: 0.85rem !important;
+        font-family: 'Poppins', sans-serif !important;
     }
-    [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
-        color: #D9B98F !important;
-        font-size: 1rem !important;
+    [data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+    [data-testid="stSidebar"] .stCaption {
+        color: #64748B !important;
+        font-size: 0.82rem !important;
     }
     [data-testid="stSidebar"] [data-testid="stExpander"] {
-        background: #5D4037 !important;
-        border: 3px solid #2D1D0D !important;
-        box-shadow:
-            inset -3px -3px 0 #2D1D0D,
-            inset  3px  3px 0 #7A5A50;
+        background: #FFFFFF !important;
+        border: 1px solid #E6ECF3 !important;
+        border-radius: 14px !important;
+        box-shadow: 0 2px 10px rgba(4, 30, 66, 0.05);
+        margin-bottom: 0.7rem;
+    }
+    [data-testid="stSidebar"] [data-testid="stExpander"] summary {
+        background: #F5FAFE !important;
+        color: #0071CE !important;
+        font-weight: 700 !important;
+        border-radius: 14px !important;
+    }
+    [data-testid="stSidebar"] hr {
+        border-top: 1px dashed #CBD5E0 !important;
+        margin: 1rem 0 !important;
     }
 
     /* ============================== TABS ================================ */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 4px;
-        background: transparent;
-        padding: 0;
-        border-bottom: 4px solid #FFAA00;
-        margin-bottom: 1rem;
+        gap: 6px;
+        background: #FFFFFF;
+        padding: 8px;
+        border-radius: 16px;
+        border: 1px solid #E6ECF3;
+        box-shadow: 0 3px 12px rgba(4, 30, 66, 0.05);
+        margin-bottom: 1.2rem;
     }
     .stTabs [data-baseweb="tab"] {
-        background: #5D9C3F;
-        border: 4px solid #2D5A20;
-        border-bottom: none;
-        box-shadow:
-            inset -4px -4px 0 #2D5A20,
-            inset  4px  4px 0 #9AD97C;
-        font-family: 'Silkscreen', cursive !important;
-        font-size: 0.8rem !important;
-        color: #FFFFFF !important;
-        padding: 10px 16px !important;
-        text-shadow: 2px 2px 0 #000;
+        background: transparent;
+        border: none !important;
+        border-radius: 11px;
+        padding: 11px 18px !important;
+        font-family: 'Poppins', sans-serif !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        color: #4A5568 !important;
+        transition: all 0.2s ease;
         height: auto !important;
     }
+    .stTabs [data-baseweb="tab"]:hover {
+        background: #F5FAFE !important;
+        color: #0071CE !important;
+    }
     .stTabs [aria-selected="true"] {
-        background: #FFAA00 !important;
-        border-color: #B8952B !important;
-        box-shadow:
-            inset -4px -4px 0 #B8952B,
-            inset  4px  4px 0 #FFE58F !important;
-        color: #2D1D0D !important;
-        text-shadow: none !important;
+        background: linear-gradient(135deg, #0071CE 0%, #0057A8 100%) !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 6px 16px rgba(0, 113, 206, 0.32);
     }
     .stTabs [data-baseweb="tab-highlight"] { display: none; }
+    .stTabs [data-baseweb="tab-border"] { display: none; }
 
     /* ============================== BUTTONS ============================= */
     .stButton > button,
     .stDownloadButton > button {
-        background: #7CBD56 !important;
-        border: 4px solid #3D6B2D !important;
-        box-shadow:
-            inset -4px -4px 0 #3D6B2D,
-            inset  4px  4px 0 #B0E08C,
-            6px 6px 0 rgba(0,0,0,0.5) !important;
+        background: linear-gradient(135deg, #0071CE 0%, #0057A8 100%) !important;
+        border: none !important;
+        border-radius: 999px !important;
         color: #FFFFFF !important;
-        font-family: 'Silkscreen', cursive !important;
-        font-size: 0.85rem !important;
-        padding: 0.55rem 1.2rem !important;
-        border-radius: 0 !important;
-        text-shadow: 2px 2px 0 #000;
-        transition: all 0.06s;
+        font-family: 'Poppins', sans-serif !important;
+        font-size: 0.9rem !important;
+        font-weight: 700 !important;
+        padding: 0.65rem 1.6rem !important;
+        box-shadow: 0 5px 16px rgba(0, 113, 206, 0.35) !important;
+        transition: all 0.2s ease;
     }
     .stButton > button:hover,
     .stDownloadButton > button:hover {
-        transform: translate(2px, 2px);
-        background: #8BCE66 !important;
-        box-shadow:
-            inset -4px -4px 0 #3D6B2D,
-            inset  4px  4px 0 #B0E08C,
-            4px 4px 0 rgba(0,0,0,0.5) !important;
+        transform: translateY(-2px);
+        background: linear-gradient(135deg, #0084EC 0%, #0066C4 100%) !important;
+        box-shadow: 0 8px 22px rgba(0, 113, 206, 0.5) !important;
     }
     .stButton > button:active,
     .stDownloadButton > button:active {
-        transform: translate(4px, 4px);
-        box-shadow:
-            inset -4px -4px 0 #3D6B2D,
-            inset  4px  4px 0 #B0E08C,
-            2px 2px 0 rgba(0,0,0,0.5) !important;
+        transform: translateY(0);
+        box-shadow: 0 3px 10px rgba(0, 113, 206, 0.4) !important;
     }
 
     /* ============================== EXPANDER ============================ */
     [data-testid="stExpander"] {
-        background: #F0DCB8;
-        border: 4px solid #5D3A1A !important;
-        box-shadow:
-            inset -4px -4px 0 #A88050,
-            inset  4px  4px 0 #FFFFFF,
-            6px 6px 0 rgba(0,0,0,0.45);
-        border-radius: 0 !important;
+        background: #FFFFFF;
+        border: 1px solid #E6ECF3 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 3px 14px rgba(4, 30, 66, 0.06);
+        overflow: hidden;
     }
     [data-testid="stExpander"] summary {
-        background: #D9B98F !important;
-        font-family: 'Silkscreen', cursive !important;
-        color: #3D2817 !important;
-        padding: 0.6rem 0.8rem !important;
-        border-bottom: 3px solid #5D3A1A;
+        background: linear-gradient(135deg, #F5FAFE 0%, #EBF5FE 100%) !important;
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 700 !important;
+        color: #0071CE !important;
+        padding: 0.9rem 1.1rem !important;
+        border-bottom: 1px solid #E6ECF3;
     }
     [data-testid="stExpander"] summary:hover {
-        background: #E5C9A0 !important;
-    }
-    [data-testid="stExpander"] p,
-    [data-testid="stExpander"] li {
-        color: #2D1D0D !important;
+        background: linear-gradient(135deg, #EBF5FE 0%, #E1EFFA 100%) !important;
     }
 
-    /* ============================== CONTAINER =========================== */
+    /* ============================== CONTAINER (border=True) ============= */
     [data-testid="stVerticalBlockBorderWrapper"] {
-        background: #E8D5B0;
-        border: 4px solid #5D3A1A !important;
-        box-shadow:
-            inset -4px -4px 0 #B8957A,
-            inset  4px  4px 0 #FFFFFF,
-            8px 8px 0 rgba(0,0,0,0.4);
-        padding: 0.6rem !important;
-        border-radius: 0 !important;
+        background: #FFFFFF;
+        border: 1px solid #E6ECF3 !important;
+        border-radius: 16px !important;
+        padding: 0.5rem !important;
+        box-shadow: 0 4px 16px rgba(4, 30, 66, 0.06);
+        transition: box-shadow 0.2s ease;
+    }
+    [data-testid="stVerticalBlockBorderWrapper"]:hover {
+        box-shadow: 0 6px 22px rgba(0, 113, 206, 0.12);
     }
     [data-testid="stVerticalBlockBorderWrapper"] p,
-    [data-testid="stVerticalBlockBorderWrapper"] li,
-    [data-testid="stVerticalBlockBorderWrapper"] b,
-    [data-testid="stVerticalBlockBorderWrapper"] strong {
-        color: #2D1D0D !important;
+    [data-testid="stVerticalBlockBorderWrapper"] li {
+        color: #1A2B4A !important;
+    }
+    [data-testid="stVerticalBlockBorderWrapper"] b {
+        color: #041E42;
     }
 
     /* ============================== DATAFRAME =========================== */
     [data-testid="stDataFrame"] {
-        border: 4px solid #5D3A1A !important;
-        box-shadow:
-            inset -4px -4px 0 #B8957A,
-            inset  4px  4px 0 #FFFFFF,
-            6px 6px 0 rgba(0,0,0,0.4);
+        border: 1px solid #E6ECF3 !important;
+        border-radius: 14px !important;
+        overflow: hidden;
+        box-shadow: 0 3px 14px rgba(4, 30, 66, 0.06);
         background: #FFFFFF !important;
-        padding: 4px;
     }
 
     /* ============================== PLOTLY ============================== */
     [data-testid="stPlotlyChart"] {
-        border: 4px solid #5D3A1A;
-        box-shadow:
-            inset -4px -4px 0 #B8957A,
-            inset  4px  4px 0 #FFFFFF,
-            6px 6px 0 rgba(0,0,0,0.4);
-        padding: 6px;
-        background: #FBF5E8;
+        background: #FFFFFF;
+        border: 1px solid #E6ECF3;
+        border-radius: 16px;
+        padding: 10px;
+        box-shadow: 0 3px 14px rgba(4, 30, 66, 0.06);
     }
 
     /* ============================== SLIDER ============================== */
     [data-testid="stSlider"] {
-        background: #E8D5B0;
-        border: 4px solid #5D3A1A;
-        box-shadow:
-            inset -4px -4px 0 #B8957A,
-            inset  4px  4px 0 #FFFFFF;
+        background: #FFFFFF;
+        border: 1px solid #E6ECF3;
+        border-radius: 14px;
         padding: 1rem 1.2rem;
+        box-shadow: 0 2px 10px rgba(4, 30, 66, 0.04);
     }
     [data-testid="stSlider"] label {
-        color: #2D1D0D !important;
-        font-family: 'Silkscreen', cursive !important;
-        font-size: 0.82rem !important;
+        color: #041E42 !important;
+        font-family: 'Poppins', sans-serif !important;
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
     }
 
     /* ============================== MULTISELECT ========================= */
     .stMultiSelect [data-baseweb="select"] > div {
         background: #FFFFFF !important;
-        border: 3px solid #5D3A1A !important;
-        border-radius: 0 !important;
-        box-shadow: inset -3px -3px 0 #D9B98F, inset 3px 3px 0 #FFFFFF;
+        border: 1px solid #CBD5E0 !important;
+        border-radius: 10px !important;
+        box-shadow: none !important;
+    }
+    .stMultiSelect [data-baseweb="select"] > div:focus-within {
+        border-color: #0071CE !important;
+        box-shadow: 0 0 0 3px rgba(0, 113, 206, 0.15) !important;
     }
     .stMultiSelect [data-baseweb="tag"] {
-        background: #7CBD56 !important;
-        border: 2px solid #3D6B2D !important;
-        border-radius: 0 !important;
+        background: linear-gradient(135deg, #0071CE 0%, #0057A8 100%) !important;
+        border: none !important;
+        border-radius: 8px !important;
         color: white !important;
-        font-family: 'Silkscreen', cursive !important;
-        font-size: 0.72rem !important;
+        font-family: 'Poppins', sans-serif !important;
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
     }
 
     /* ============================== FILE UPLOADER ======================= */
     [data-testid="stFileUploader"] {
-        background: #E8D5B0;
-        border: 3px dashed #5D3A1A;
-        padding: 1rem;
+        background: #F5FAFE;
+        border: 2px dashed #78B9E7;
+        border-radius: 12px;
+        padding: 0.9rem;
+    }
+    [data-testid="stFileUploader"]:hover {
+        border-color: #0071CE;
+        background: #EBF5FE;
     }
     [data-testid="stFileUploader"] label {
-        color: #2D1D0D !important;
-        font-family: 'Silkscreen', cursive !important;
+        color: #041E42 !important;
+        font-family: 'Poppins', sans-serif !important;
         font-size: 0.82rem !important;
+        font-weight: 600 !important;
     }
 
     /* ============================== CAPTION ============================= */
     [data-testid="stCaptionContainer"],
     .stCaption {
-        color: #F5DEB3 !important;
-        font-size: 1.02rem !important;
+        color: #64748B !important;
+        font-size: 0.87rem !important;
         font-style: italic;
-    }
-
-    /* ============================== BODY TEXT =========================== */
-    .stMarkdown p, .stMarkdown li {
-        color: #F5DEB3;
     }
 
     /* ============================== ALERTS ============================== */
     .stAlert {
-        border: 4px solid #2D1D0D !important;
-        box-shadow:
-            inset -4px -4px 0 rgba(0,0,0,0.18),
-            inset  4px  4px 0 rgba(255,255,255,0.3),
-            6px 6px 0 rgba(0,0,0,0.45);
-        border-radius: 0 !important;
+        border-radius: 12px !important;
+        border: none !important;
+        box-shadow: 0 3px 12px rgba(4, 30, 66, 0.08);
     }
 
     /* ============================== DIVIDER ============================= */
     hr {
         border: none;
-        border-top: 4px dashed #FFAA00 !important;
-        opacity: 0.75;
+        border-top: 1px dashed #CBD5E0 !important;
         margin: 1.6rem 0 !important;
     }
 
     /* ============================== SCROLLBAR =========================== */
-    ::-webkit-scrollbar { width: 14px; height: 14px; }
-    ::-webkit-scrollbar-track { background: #2D1D0D; }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: #F1F5F9; }
     ::-webkit-scrollbar-thumb {
-        background: #7CBD56;
-        border: 2px solid #2D1D0D;
+        background: linear-gradient(180deg, #0071CE, #0057A8);
+        border-radius: 10px;
     }
-    ::-webkit-scrollbar-thumb:hover { background: #FFAA00; }
+    ::-webkit-scrollbar-thumb:hover { background: #041E42; }
 
     /* ============================== MISC ================================ */
     #MainMenu, footer { visibility: hidden; }
@@ -486,14 +522,33 @@ st.markdown(
 
 
 # ----------------------------------------------------------------------------
-# HERO
+# HERO — WALMART EDITION dengan SPARK LOGO
 # ----------------------------------------------------------------------------
 st.markdown(
     """
     <div class="hero">
-      <h1>⛏️ Decision Making for Walmart</h1>
-      <p>Dashboard Pendukung Pengambilan Keputusan Berbasis Data Penjualan Mingguan</p>
-      <div class="meta">Kelompok 2 &middot; Bryan, Hizkia, Rico, Grace, Loyar &nbsp;·&nbsp; Business Intelligence / Analitik Data</div>
+      <div class="hero-inner">
+        <svg class="hero-spark" viewBox="0 0 100 100" width="64" height="64" aria-hidden="true">
+          <g fill="#FFC220" transform="translate(50 50)">
+            <rect x="-4.5" y="-46" width="9" height="22" rx="4.5"/>
+            <rect x="-4.5" y="24" width="9" height="22" rx="4.5"/>
+            <g transform="rotate(60)">
+              <rect x="-4.5" y="-46" width="9" height="22" rx="4.5"/>
+              <rect x="-4.5" y="24" width="9" height="22" rx="4.5"/>
+            </g>
+            <g transform="rotate(120)">
+              <rect x="-4.5" y="-46" width="9" height="22" rx="4.5"/>
+              <rect x="-4.5" y="24" width="9" height="22" rx="4.5"/>
+            </g>
+          </g>
+        </svg>
+        <div class="hero-text">
+          <h1>Decision Making for Walmart</h1>
+          <p>Dashboard Pendukung Pengambilan Keputusan Berbasis Data Penjualan Mingguan</p>
+          <div class="slogan">✦ Save Money. Live Better.</div>
+          <div class="meta">Kelompok 2 &middot; Bryan, Hizkia, Rico, Grace, Loyar &nbsp;·&nbsp; Business Intelligence / Analitik Data</div>
+        </div>
+      </div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -509,17 +564,20 @@ def show(fig, height=420):
         height=height,
         margin=dict(l=10, r=10, t=55, b=10),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0,
-                    bgcolor="rgba(251, 245, 232, 0.9)",
-                    bordercolor="#5D3A1A", borderwidth=2),
-        font=dict(family="VT323, monospace", size=14, color="#3D2817"),
-        title=dict(font=dict(family="Silkscreen, monospace", size=14, color="#8B0000")),
-        plot_bgcolor="#FBF5E8",
-        paper_bgcolor="#FBF5E8",
+                    bgcolor="rgba(255,255,255,0.9)",
+                    bordercolor="#E6ECF3", borderwidth=1),
+        font=dict(family="Inter, sans-serif", size=12, color="#2E2F32"),
+        title=dict(font=dict(family="Poppins, sans-serif", size=14,
+                             color="#041E42", weight="bold")),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
     )
-    fig.update_xaxes(gridcolor="#E8D5B0", linecolor="#5D3A1A",
-                     zerolinecolor="#5D3A1A", tickfont=dict(family="VT323, monospace", color="#3D2817"))
-    fig.update_yaxes(gridcolor="#E8D5B0", linecolor="#5D3A1A",
-                     zerolinecolor="#5D3A1A", tickfont=dict(family="VT323, monospace", color="#3D2817"))
+    fig.update_xaxes(gridcolor="#EEF2F7", linecolor="#CBD5E0",
+                     zerolinecolor="#E2E8F0",
+                     tickfont=dict(family="Inter, sans-serif", color="#4A5568", size=11))
+    fig.update_yaxes(gridcolor="#EEF2F7", linecolor="#CBD5E0",
+                     zerolinecolor="#E2E8F0",
+                     tickfont=dict(family="Inter, sans-serif", color="#4A5568", size=11))
     try:
         st.plotly_chart(fig, width="stretch")
     except Exception:
@@ -553,16 +611,16 @@ def pct(x, d=1, sign=True):
 
 
 def interpretasi(judul, teks):
-    """Kotak interpretasi bertema papan kayu."""
+    """Kotak interpretasi bergaya kartu Walmart."""
     st.markdown(
-        f'<div class="interp"><b>{judul}</b>{teks}</div>',
+        f'<div class="interp"><b>💡 {judul}</b>{teks}</div>',
         unsafe_allow_html=True,
     )
 
 
 def catatan(teks):
-    """Kotak catatan / peringatan metodologis bertema papan rambu."""
-    st.markdown(f'<div class="note"><b>📌 Catatan Metodologis:</b> {teks}</div>',
+    """Kotak catatan / peringatan metodologis."""
+    st.markdown(f'<div class="note"><b>📌 Catatan Metodologis</b><br>{teks}</div>',
                 unsafe_allow_html=True)
 
 
@@ -733,7 +791,7 @@ def store_list(gr, n=5, ascending=True, ss=None):
 
 
 # ----------------------------------------------------------------------------
-# MESIN KEPUTUSAN (bahasa kelompok mahasiswa, formal)
+# MESIN KEPUTUSAN
 # ----------------------------------------------------------------------------
 def build_decisions(df):
     ss, gr = store_summary(df), store_growth(df)
@@ -943,7 +1001,7 @@ def simulate(df, uplift_peak, recovery):
 # ----------------------------------------------------------------------------
 # SIDEBAR
 # ----------------------------------------------------------------------------
-st.sidebar.markdown("## ⛏️ Panel Pengaturan")
+st.sidebar.markdown("## 🛒 Panel Pengaturan")
 st.sidebar.caption("Pilih berkas data serta filter periode dan toko yang ingin dianalisis.")
 
 with st.sidebar.expander("📂 Sumber Data", expanded=True):
@@ -980,16 +1038,16 @@ if df.empty:
     st.stop()
 
 st.sidebar.markdown("---")
-st.sidebar.caption(f"⛏️ **Data aktif:** {len(df):,} baris · "
+st.sidebar.caption(f"🛒 **Data aktif:** {len(df):,} baris · "
                    f"{df.Store.nunique()} toko · {df.Year.nunique()} tahun")
-st.sidebar.caption("Build 1.0.0 · Seed: 2024 · © Kelompok 2")
+st.sidebar.caption("Save Money. Live Better. · Walmart BI v2.0")
 
 # ----------------------------------------------------------------------------
 # TAB
 # ----------------------------------------------------------------------------
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📊 Ringkasan", "🏘️ Analisis Toko", "🎃 Musiman & Hari Libur",
-    "🌍 Faktor Eksternal", "⚔️ Pusat Keputusan"])
+    "📊 Ringkasan", "🏬 Analisis Toko", "📅 Musiman & Hari Libur",
+    "🌡️ Faktor Eksternal", "🎯 Pusat Keputusan"])
 
 # ============================================================================
 # TAB 1 — RINGKASAN EKSEKUTIF
@@ -1018,11 +1076,13 @@ with tab1:
     w = weekly_table(df)
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=w.Date, y=w.Total, mode="lines", name="Total penjualan jaringan",
-                             line=dict(color=BLUE, width=3)))
+                             line=dict(color=WALMART_BLUE, width=3),
+                             fill="tozeroy", fillcolor="rgba(0, 113, 206, 0.08)"))
     hol = w[w.Holiday == 1]
     fig.add_trace(go.Scatter(x=hol.Date, y=hol.Total, mode="markers", name="Pekan libur (flag)",
-                             marker=dict(color=YELLOW, size=12, line=dict(color=DARK, width=2),
-                                         symbol="square")))
+                             marker=dict(color=WALMART_YELLOW, size=13,
+                                         line=dict(color=WALMART_DARK, width=2),
+                                         symbol="circle")))
     fig.update_layout(title="Tren Penjualan Mingguan (Total Semua Toko Terpilih)",
                       yaxis_title="USD", xaxis_title="Tanggal")
     show(fig)
@@ -1046,14 +1106,14 @@ with tab1:
         t["Store"] = "Toko " + t.Store.astype(int).astype(str)
         fig = px.bar(t.iloc[::-1], x="Total", y="Store", orientation="h",
                      title="10 Toko dengan Penjualan Tertinggi",
-                     color_discrete_sequence=[BLUE])
+                     color_discrete_sequence=[WALMART_BLUE])
         show(fig, 380)
     with colB:
         t = ss.tail(10).copy()
         t["Store"] = "Toko " + t.Store.astype(int).astype(str)
         fig = px.bar(t, x="Total", y="Store", orientation="h",
                      title="10 Toko dengan Penjualan Terendah",
-                     color_discrete_sequence=[GREY])
+                     color_discrete_sequence=[WALMART_GREY])
         show(fig, 380)
 
     interpretasi(
@@ -1087,8 +1147,9 @@ with tab2:
                 marker_color=[CLASS_COLOR[k] for k in ss.Kelas])
     fig.add_trace(go.Scatter(x=ss.Store.astype(int).astype(str), y=ss.CumShare * 100,
                              name="Kumulatif (%)", yaxis="y2", mode="lines+markers",
-                             line=dict(color=DARK, width=3)))
-    fig.update_layout(title="Diagram Pareto Penjualan per Toko (emerald = A, gold = B, stone = C)",
+                             line=dict(color=WALMART_DARK, width=3),
+                             marker=dict(size=7)))
+    fig.update_layout(title="Diagram Pareto Penjualan per Toko (biru = A, kuning = B, abu = C)",
                       xaxis=dict(type="category", title="Toko"),
                       yaxis=dict(title="USD"),
                       yaxis2=dict(overlaying="y", side="right", range=[0, 105], title="Kumulatif (%)"))
@@ -1119,7 +1180,7 @@ with tab2:
                          labels={"Pertumbuhan": "Pertumbuhan terakhir (%)",
                                  "Rata2": "Rata-rata penjualan/pekan (USD)"},
                          title="Kuadran Toko: Skala Penjualan vs Pertumbuhan")
-        fig.add_vline(x=0, line_dash="dash", line_color=RED)
+        fig.add_vline(x=0, line_dash="dash", line_color=WALMART_RED)
         fig.update_traces(textposition="top center")
         show(fig, 480)
         interpretasi(
@@ -1139,7 +1200,7 @@ with tab2:
 
     t = ss.sort_values("CV", ascending=False).copy()
     t["Toko"] = t.Store.astype(int).astype(str)
-    fig = px.bar(t, x="Toko", y="CV", color_discrete_sequence=[YELLOW],
+    fig = px.bar(t, x="Toko", y="CV", color_discrete_sequence=[WALMART_YELLOW],
                  title="Volatilitas Penjualan per Toko (CV)")
     fig.update_xaxes(type="category")
     show(fig, 340)
@@ -1186,7 +1247,8 @@ with tab3:
     sdf = pd.DataFrame({"Bulan": [MONTH_ID[m] for m in si.index], "Indeks": si.values * 100,
                         "Arah": np.where(si.values >= 0, "Di atas rata-rata", "Di bawah rata-rata")})
     fig = px.bar(sdf, x="Bulan", y="Indeks", color="Arah",
-                 color_discrete_map={"Di atas rata-rata": GREEN, "Di bawah rata-rata": GREY},
+                 color_discrete_map={"Di atas rata-rata": WALMART_BLUE,
+                                     "Di bawah rata-rata": WALMART_GREY},
                  title="Indeks Musiman Bulanan (Penyimpangan vs Rata-rata, %)")
     show(fig, 360)
 
@@ -1206,7 +1268,8 @@ with tab3:
     w["Tahun"] = w.Year.astype(str)
     fig = px.line(w.sort_values("Week"), x="Week", y="Total", color="Tahun",
                   title="Total Penjualan per Pekan ke-n dalam Tahun",
-                  color_discrete_sequence=[GREEN, YELLOW, DARK, RED])
+                  color_discrete_sequence=[WALMART_BLUE, WALMART_YELLOW,
+                                            WALMART_DARK, WALMART_RED])
     show(fig, 380)
 
     divider()
@@ -1218,8 +1281,9 @@ with tab3:
     if len(hs):
         fig = px.bar(hs.assign(Lift=hs.Lift_Global * 100), x="Event", y="Lift",
                      title="Rata-rata Dampak Pekan Libur vs Pekan Non-Libur (%)",
-                     color_discrete_sequence=[BLUE], text="Lift")
-        fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
+                     color_discrete_sequence=[WALMART_BLUE], text="Lift")
+        fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside",
+                          textfont=dict(color=WALMART_DARK, family="Poppins"))
         show(fig, 380)
 
         t = hs.copy()
@@ -1275,7 +1339,8 @@ with tab4:
 
     long = drv.melt(id_vars="Faktor", var_name="Metode", value_name="r")
     fig = px.bar(long, x="Faktor", y="r", color="Metode", barmode="group",
-                 color_discrete_sequence=[BLUE, YELLOW], title="Koefisien Korelasi Pearson")
+                 color_discrete_sequence=[WALMART_BLUE, WALMART_YELLOW],
+                 title="Koefisien Korelasi Pearson")
     fig.update_yaxes(range=[-1, 1])
     show(fig, 360)
 
@@ -1292,20 +1357,20 @@ with tab4:
     with left:
         samp = dd.sample(min(len(dd), 2500), random_state=1)
         fig = px.scatter(samp, x="Unemployment", y="Indeks", opacity=0.35,
-                         color_discrete_sequence=[BLUE],
+                         color_discrete_sequence=[WALMART_BLUE],
                          title="Pengangguran vs Indeks Penjualan Toko")
         if dd.Unemployment.nunique() > 1:
             k, b = np.polyfit(dd.Unemployment, dd.Indeks, 1)
             xs = np.array([dd.Unemployment.min(), dd.Unemployment.max()])
             fig.add_trace(go.Scatter(x=xs, y=k * xs + b, mode="lines", name="Garis Tren",
-                                     line=dict(color=RED, width=3)))
+                                     line=dict(color=WALMART_RED, width=3)))
         show(fig, 380)
     with right:
         bins = pd.cut(dd.Temperature, [-20, 40, 60, 80, 120],
                       labels=["<40°F", "40-60°F", "60-80°F", ">80°F"])
         tb = dd.groupby(bins, observed=True).Indeks.mean().reset_index()
         tb.columns = ["Suhu", "Indeks"]
-        fig = px.bar(tb, x="Suhu", y="Indeks", color_discrete_sequence=[YELLOW],
+        fig = px.bar(tb, x="Suhu", y="Indeks", color_discrete_sequence=[WALMART_YELLOW],
                      title="Indeks Penjualan Menurut Rentang Suhu")
         show(fig, 380)
 
@@ -1326,7 +1391,7 @@ with tab4:
 # TAB 5 — PUSAT KEPUTUSAN
 # ============================================================================
 with tab5:
-    st.markdown("### ⚔️ Pusat Keputusan")
+    st.markdown("### 🎯 Pusat Keputusan")
     st.markdown(
         "Bagian ini merangkum keputusan yang kami usulkan berdasarkan seluruh temuan pada "
         "tab-tab sebelumnya. Setiap keputusan disertai bukti data, usulan tindakan, dan "
