@@ -148,7 +148,7 @@ def pct(x, d=1, sign=True):
 
 
 def interpretasi(judul, teks):
-    """Kotak interpretasi resmi kelompok."""
+    """Kotak interpretasi."""
     st.markdown(
         f'<div class="interp"><b>{judul}</b><br>{teks}</div>',
         unsafe_allow_html=True,
@@ -351,7 +351,7 @@ def build_decisions(df):
     if pd.notna(tg_lift):
         D.append(dict(
             prio="Tinggi", area="Inventori & Tenaga Kerja",
-            keputusan=("Kelompok kami merekomendasikan pekan Thanksgiving dijadikan sebagai "
+            keputusan=("Merekomendasikan pekan Thanksgiving dijadikan sebagai "
                        "prioritas utama dalam perencanaan inventori dan penjadwalan tenaga kerja."),
             bukti=(f"Berdasarkan pengolahan data, pekan Thanksgiving menghasilkan rata-rata "
                    f"{fmt_usd(tg_sales, 2)} per toko, yaitu {pct(tg_lift, 0, False)} di atas pekan "
@@ -359,7 +359,7 @@ def build_decisions(df):
                    f"Pola ini konsisten pada seluruh tahun pengamatan "
                    f"({int(hs_val('Thanksgiving', 'N'))} pekan Thanksgiving), sehingga kami menilai "
                    f"temuan ini cukup andal sebagai dasar keputusan."),
-            aksi=["Kami mengusulkan pemesanan stok untuk kategori permintaan tinggi dilakukan "
+            aksi=["Mengusulkan pemesanan stok untuk kategori permintaan tinggi dilakukan "
                   "3–4 pekan sebelum pekan Thanksgiving.",
                   "Penambahan jadwal karyawan dan kasir sementara pada pekan tersebut perlu "
                   "direncanakan lebih awal.",
@@ -375,14 +375,14 @@ def build_decisions(df):
         top_txt = ", ".join(f"{fmt_date(d)} ({fmt_usd(t)})" for d, t in zip(top.Date, top.Total)) if len(top) else "-"
         D.append(dict(
             prio="Tinggi", area="Perencanaan Puncak Musim",
-            keputusan=("Kelompok kami menyarankan pembentukan 'kalender puncak' internal: pekan "
+            keputusan=("Menyarankan pembentukan 'kalender puncak' internal: pekan "
                        "pra-Natal perlu diperlakukan sebagai periode puncak meskipun tidak "
                        "tertandai oleh Holiday_Flag."),
             bukti=(f"Hasil analisis menunjukkan penjualan Desember {pct(dec_idx, 0, False)} di atas "
                    f"rata-rata keseluruhan. Pekan tertinggi: {top_txt}. "
                    f"{len(unflag)} dari {len(top)} pekan tertinggi tidak ditandai sebagai hari libur, "
                    f"yang berarti pekan pra-Natal tidak tertangkap oleh Holiday_Flag."),
-            aksi=["Kami mengusulkan penambahan flag 'Pra-Natal' (pekan 3 dan 4 Desember) pada data "
+            aksi=["Mengusulkan penambahan flag 'Pra-Natal' (pekan 3 dan 4 Desember) pada data "
                   "maupun model peramalan.",
                   "Kapasitas gudang, transportasi, dan tenaga kerja sebaiknya dikunci sejak awal November.",
                   "Rencana cadangan stok untuk toko kelas A perlu disiapkan sebelum 15 Desember."],
@@ -394,13 +394,13 @@ def build_decisions(df):
     if pd.notna(jan_idx):
         D.append(dict(
             prio="Menengah", area="Efisiensi Biaya",
-            keputusan=("Kelompok kami merekomendasikan pengurangan stok dan jam kerja setelah Natal, "
+            keputusan=("Merekomendasikan pengurangan stok dan jam kerja setelah Natal, "
                        "serta pemanfaatan Januari untuk clearance, pelatihan, dan perawatan toko."),
             bukti=(f"Data menunjukkan penjualan Januari {pct(abs(jan_idx), 0, False)} di bawah rata-rata "
                    f"keseluruhan{' (bulan terlemah)' if jan_idx == si.min() else ''}. "
                    f"Pekan 30-31 Desember tercatat {pct(ny, 0)} terhadap pekan non-libur, padahal "
                    f"ditandai sebagai pekan libur."),
-            aksi=["Kami mengusulkan promo clearance akhir Desember untuk menghabiskan stok musiman.",
+            aksi=["Mengusulkan promo clearance akhir Desember untuk menghabiskan stok musiman.",
                   "Pesanan pembelian Januari sebaiknya diturunkan mengikuti indeks musiman.",
                   "Renovasi toko dan pelatihan staf sebaiknya dijadwalkan pada Januari."],
             kpi="Inventory turnover, labor cost ratio, sisa stok musiman."))
@@ -411,14 +411,14 @@ def build_decisions(df):
     top5 = ss.head(5)
     D.append(dict(
         prio="Tinggi", area="Alokasi Sumber Daya",
-        keputusan=("Kelompok kami merekomendasikan prioritas alokasi stok, tenaga kerja, dan "
+        keputusan=("Merekomendasikan prioritas alokasi stok, tenaga kerja, dan "
                    "investasi pada toko kelas A (prinsip Pareto)."),
         bukti=(f"Hasil klasifikasi ABC menunjukkan {nA} dari {len(ss)} toko (kelas A) menyumbang "
                f"{pct(shareA, 0, False)} penjualan. Lima toko teratas "
                f"({', '.join('Toko ' + str(int(s)) for s in top5.Store)}) menyumbang "
                f"{pct(top5.Share.sum(), 1, False)}, sedangkan 10 toko terbawah hanya "
                f"{pct(ss.tail(10).Share.sum(), 1, False)}."),
-        aksi=["Kami mengusulkan target service level yang lebih tinggi untuk toko kelas A.",
+        aksi=["Mengusulkan target service level yang lebih tinggi untuk toko kelas A.",
               "Saat pasokan terbatas di musim puncak, toko kelas A perlu didahulukan.",
               "Pemantauan toko kelas A sebaiknya dilakukan mingguan dengan alert penurunan."],
         kpi="Penjualan toko kelas A, stock-out rate, kepuasan pelanggan."))
@@ -431,7 +431,7 @@ def build_decisions(df):
         two = gr[(gr.G_last < 0) & (gr.G_prev < 0)]
         D.append(dict(
             prio="Tinggi", area="Perbaikan Kinerja Toko",
-            keputusan=("Kelompok kami mengusulkan audit khusus pada toko yang menurun, terutama "
+            keputusan=("Mengusulkan audit khusus pada toko yang menurun, terutama "
                        "toko bernilai besar atau yang turun dua tahun berturut-turut."),
             bukti=(f"Analisis pertumbuhan (Feb–Okt) menunjukkan {len(dec)} dari {len(gr)} toko "
                    f"mengalami penurunan pada {y_last} dibandingkan {y_prev}. "
@@ -448,7 +448,7 @@ def build_decisions(df):
     if len(gr.dropna(subset=["G_last"])):
         D.append(dict(
             prio="Menengah", area="Pertumbuhan",
-            keputusan=("Kelompok kami merekomendasikan pembelajaran dan replikasi praktik toko "
+            keputusan=("Merekomendasikan pembelajaran dan replikasi praktik toko "
                        "dengan pertumbuhan tertinggi, sekaligus evaluasi potensi ekspansi kapasitas."),
             bukti=(f"Pertumbuhan tertinggi dicapai oleh: {store_list(gr, 5, False, ss)}. "
                    f"Sebagian besar memiliki basis penjualan kecil (kelas B/C), sehingga masih "
@@ -463,7 +463,7 @@ def build_decisions(df):
     if len(c):
         D.append(dict(
             prio="Menengah", area="Efisiensi Biaya",
-            keputusan=("Kelompok kami menyarankan peninjauan efisiensi toko kelas C (biaya, ukuran, "
+            keputusan=("Menyarankan peninjauan efisiensi toko kelas C (biaya, ukuran, "
                        "assortment) sebelum menambah investasi baru."),
             bukti=(f"Toko kelas C berjumlah {len(c)} unit dan hanya menyumbang "
                    f"{pct(c.Share.sum(), 1, False)} penjualan; penjualan terendah: "
@@ -479,7 +479,7 @@ def build_decisions(df):
     hi, lo = ss.nlargest(4, "CV"), ss.nsmallest(4, "CV")
     D.append(dict(
         prio="Menengah", area="Manajemen Stok",
-        keputusan=("Kelompok kami mengusulkan pembedaan kebijakan safety stock: toko berfluktuasi "
+        keputusan=("Mengusulkan pembedaan kebijakan safety stock: toko berfluktuasi "
                    "tinggi membutuhkan buffer dan jadwal fleksibel, sedangkan toko stabil dapat "
                    "diterapkan kebijakan lean."),
         bukti=(f"Fluktuasi (CV) tertinggi: {', '.join(f'Toko {int(r.Store)} ({r.CV:.2f})' for _, r in hi.iterrows())}. "
@@ -494,7 +494,7 @@ def build_decisions(df):
     if pd.notna(sb) or pd.notna(lb):
         D.append(dict(
             prio="Menengah", area="Promosi & Pemasaran",
-            keputusan=("Kelompok kami merekomendasikan pengalihan anggaran promosi dari hari libur "
+            keputusan=("Merekomendasikan pengalihan anggaran promosi dari hari libur "
                        "berdampak rendah ke pekan Thanksgiving dan Desember."),
             bukti=(f"Dampak Super Bowl {pct(sb, 1)} dan Labor Day {pct(lb, 1)} terhadap pekan non-libur "
                    f"jauh lebih rendah dibandingkan Thanksgiving ({pct(tg_lift, 0)})."),
@@ -509,7 +509,7 @@ def build_decisions(df):
     r2_store, r2_week = variance_explained(df)
     D.append(dict(
         prio="Rendah", area="Monitoring Eksternal",
-        keputusan=("Kelompok kami berpendapat faktor makro (suhu, BBM, CPI, pengangguran) tidak "
+        keputusan=("Faktor makro (suhu, BBM, CPI, pengangguran) tidak "
                    "dijadikan dasar utama keputusan, melainkan sebagai sinyal pendukung."),
         bukti=(f"Korelasi terhadap indeks penjualan toko tergolong lemah (|r| maksimum = {mx:.2f}; "
                f"pengangguran r = {unemp:.2f}). Sebaliknya, identitas toko saja menjelaskan "
@@ -629,7 +629,7 @@ with tab1:
     show(fig)
 
     interpretasi(
-        "Interpretasi Kelompok",
+        "Interpretasi",
         "Pola grafik memperlihatkan adanya lonjakan berulang pada periode akhir tahun, "
         "khususnya menjelang Thanksgiving dan Natal. Lonjakan ini perlu menjadi perhatian "
         "utama dalam perencanaan kapasitas maupun stok, karena berdampak langsung pada "
@@ -658,7 +658,7 @@ with tab1:
         show(fig, 380)
 
     interpretasi(
-        "Interpretasi Kelompok",
+        "Interpretasi",
         "Terdapat kesenjangan yang sangat mencolok antara toko berpenjualan tinggi dan rendah. "
         "Ketimpangan ini menjadi dasar bagi kami untuk menerapkan klasifikasi ABC pada tab "
         "berikutnya, sehingga alokasi sumber daya dapat lebih tepat sasaran."
@@ -702,7 +702,7 @@ with tab2:
                    f"{pct(sub.Share.sum(), 1, False)} penjualan", delta_color="off")
 
     interpretasi(
-        "Interpretasi Kelompok",
+        "Interpretasi",
         "Prinsip Pareto terkonfirmasi pada data ini: sebagian kecil toko menyumbang mayoritas "
         "penjualan. Oleh karena itu, kami menilai bahwa prioritas alokasi sumber daya sebaiknya "
         "diberikan kepada toko kelas A, tanpa mengabaikan upaya efisiensi pada kelas C."
@@ -724,7 +724,7 @@ with tab2:
         fig.update_traces(textposition="top center")
         show(fig, 480)
         interpretasi(
-            "Interpretasi Kelompok",
+            "Interpretasi",
             "Toko yang berada di kuadran kiri-atas (skala besar namun menurun) merupakan "
             "prioritas audit tertinggi karena potensi kehilangan pendapatan paling besar. "
             "Sebaliknya, toko di kuadran kanan-bawah menawarkan peluang pertumbuhan yang layak "
@@ -746,7 +746,7 @@ with tab2:
     show(fig, 340)
 
     interpretasi(
-        "Interpretasi Kelompok",
+        "Interpretasi",
         "Toko dengan CV tinggi membutuhkan buffer stok dan jadwal tenaga kerja yang lebih "
         "fleksibel, sementara toko dengan CV rendah dapat diterapkan kebijakan lean atau "
         "just-in-time."
@@ -792,7 +792,7 @@ with tab3:
     show(fig, 360)
 
     interpretasi(
-        "Interpretasi Kelompok",
+        "Interpretasi",
         "Puncak musiman terkonsentrasi pada November–Desember, sedangkan Januari menjadi "
         "bulan terlemah. Pola ini kami jadikan acuan untuk menyusun kalender pengadaan dan "
         "promosi tahunan."
@@ -833,7 +833,7 @@ with tab3:
             "N": st.column_config.NumberColumn("Jumlah pekan")})
 
         interpretasi(
-            "Interpretasi Kelompok",
+            "Interpretasi",
             "Thanksgiving tercatat sebagai pekan libur dengan dampak terbesar, sementara "
             "Super Bowl dan Labor Day relatif lemah. Kami menilai realokasi anggaran promosi "
             "dari kedua event terakhir ke pekan Thanksgiving perlu dipertimbangkan."
@@ -911,7 +911,7 @@ with tab4:
         show(fig, 380)
 
     interpretasi(
-        "Interpretasi Kelompok",
+        "Interpretasi",
         "Nilai korelasi yang rendah menunjukkan bahwa faktor eksternal bukan penentu utama "
         "penjualan. Kami menilai faktor internal—seperti identitas toko dan pekan dalam "
         "tahun—lebih menentukan, sebagaimana akan ditunjukkan pada tab Pusat Keputusan."
@@ -1017,7 +1017,7 @@ with tab5:
               help=f"Selisih tahunan penjualan toko menurun terhadap tahun sebelumnya: {fmt_usd(gap)}")
 
     interpretasi(
-        "Interpretasi Kelompok",
+        "Interpretasi",
         "Angka simulasi di atas kami sajikan sebagai gambaran skala prioritas, bukan sebagai "
         "ramalan. Tujuannya adalah membantu pemangku kepentingan memahami besaran dampak "
         "relatif antar keputusan, sehingga alokasi perhatian dan sumber daya dapat "
@@ -1025,9 +1025,9 @@ with tab5:
     )
 
     divider()
-    st.markdown("#### Kesimpulan Kelompok")
+    st.markdown("#### Kesimpulan")
     st.markdown(
-        "Berdasarkan seluruh analisis, kelompok kami menyimpulkan bahwa **prioritas utama "
+        "Berdasarkan seluruh analisis, **prioritas utama "
         "terletak pada pengelolaan musim puncak (Thanksgiving dan Desember), perlindungan "
         "toko kelas A, serta pemulihan toko yang menurun**. Faktor eksternal seperti suhu "
         "dan pengangguran kami nilai sebagai sinyal pendukung, bukan penentu utama. "
