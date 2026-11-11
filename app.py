@@ -62,7 +62,7 @@ DEFAULT_FILE = "Walmart_Cleaned.csv"
 
 
 # ----------------------------------------------------------------------------
-# GAYA VISUAL — WALMART EDITION
+# GAYA VISUAL — WALMART EDITION (FIXED CSS)
 # ----------------------------------------------------------------------------
 st.markdown(
     """
@@ -100,15 +100,14 @@ st.markdown(
         letter-spacing: -0.3px;
         line-height: 1.3 !important;
     }
-    h1 { font-size: 1.7rem !important; }
-    h2 { font-size: 1.35rem !important; }
-
+    
     h3 {
         font-family: 'Poppins', sans-serif !important;
         color: #041E42 !important;
         font-weight: 700 !important;
-        font-size: 1.35rem !important;
-        margin-top: 1.6rem !important;
+        font-size: 1.3rem !important;
+        margin-top: 1.5rem !important;
+        margin-bottom: 1rem !important;
         padding-bottom: 0.5rem;
         border-bottom: 3px solid #FFC220;
         display: inline-block;
@@ -129,11 +128,11 @@ st.markdown(
     /* ============================== HERO ================================= */
     .hero {
         background: linear-gradient(135deg, #0071CE 0%, #0057A8 55%, #041E42 100%);
-        border-radius: 22px;
+        border-radius: 20px;
         padding: 2rem 2.4rem;
         color: white;
-        margin-bottom: 1.6rem;
-        box-shadow: 0 14px 36px rgba(0, 113, 206, 0.28);
+        margin-bottom: 1.5rem;
+        box-shadow: 0 12px 30px rgba(0, 113, 206, 0.25);
         position: relative;
         overflow: hidden;
     }
@@ -163,16 +162,18 @@ st.markdown(
         flex-shrink: 0;
         filter: drop-shadow(0 6px 16px rgba(255,194,32,0.55));
     }
+    
+    /* PERBAIKAN: Warna H1 di hero dipaksa putih */
     .hero-text h1 {
         color: #FFFFFF !important;
         margin: 0 !important;
-        font-size: 1.75rem !important;
+        font-size: 1.7rem !important;
         text-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
     .hero-text p {
         color: #E8F2FC !important;
         margin: 0.5rem 0 0 0 !important;
-        font-size: 1.02rem !important;
+        font-size: 1rem !important;
     }
     .hero-text .slogan {
         color: #FFC220 !important;
@@ -181,339 +182,229 @@ st.markdown(
         font-style: italic;
         font-size: 0.95rem !important;
         margin-top: 0.7rem !important;
-        letter-spacing: 0.3px;
     }
     .hero-text .meta {
         color: #B8D4EC !important;
         font-size: 0.85rem !important;
-        margin-top: 0.55rem !important;
+        margin-top: 0.5rem !important;
     }
 
-    /* ============================== INTERPRETASI ======================== */
+    /* ============================== INTERPRETASI & CATATAN ============== */
     .interp {
         background: linear-gradient(135deg, #EAF4FC 0%, #F5FAFE 100%);
         border-left: 5px solid #0071CE;
-        border-radius: 14px;
-        padding: 1.1rem 1.4rem;
+        border-radius: 12px;
+        padding: 1rem 1.2rem;
         margin: 1rem 0;
         color: #1A2B4A;
-        box-shadow: 0 3px 14px rgba(0, 113, 206, 0.08);
+        box-shadow: 0 3px 12px rgba(0, 113, 206, 0.06);
     }
     .interp > b:first-child {
         color: #0071CE;
         font-family: 'Poppins', sans-serif;
-        font-size: 0.82rem;
+        font-size: 0.8rem;
         font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 1.2px;
+        letter-spacing: 1px;
         display: block;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.4rem;
     }
-
-    /* ============================== CATATAN ============================= */
     .note {
         background: linear-gradient(135deg, #FFF8E1 0%, #FFF3C4 100%);
         border-left: 5px solid #FFC220;
-        border-radius: 14px;
-        padding: 1.1rem 1.4rem;
+        border-radius: 12px;
+        padding: 1rem 1.2rem;
         margin: 1rem 0;
         color: #5C4400;
-        box-shadow: 0 3px 14px rgba(255, 194, 32, 0.18);
+        box-shadow: 0 3px 12px rgba(255, 194, 32, 0.15);
     }
     .note b {
         color: #B77700;
         font-family: 'Poppins', sans-serif;
-        font-size: 0.82rem;
+        font-size: 0.8rem;
         font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 1px;
     }
 
-    /* ============================== METRICS ============================= */
+    /* ============================== METRICS (KPI) ======================= */
+    /* PERBAIKAN: Agar teks label tidak terpotong */
     [data-testid="stMetric"] {
         background: #FFFFFF;
-        border-radius: 18px;
-        padding: 1.15rem 1.3rem;
-        border: 1px solid rgba(0, 113, 206, 0.12);
+        border-radius: 14px;
+        padding: 1.2rem;
+        border: 1px solid #E6ECF3;
         border-top: 4px solid #0071CE;
-        box-shadow: 0 4px 16px rgba(4, 30, 66, 0.07);
-        transition: transform 0.22s ease, box-shadow 0.22s ease;
+        box-shadow: 0 4px 14px rgba(4, 30, 66, 0.05);
+        transition: transform 0.2s ease;
+        height: 100%; 
+        overflow: visible;
     }
     [data-testid="stMetric"]:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 26px rgba(0, 113, 206, 0.16);
+        transform: translateY(-2px);
         border-top-color: #FFC220;
     }
     [data-testid="stMetricLabel"] {
         font-family: 'Poppins', sans-serif !important;
         color: #4A5568 !important;
-        font-size: 0.78rem !important;
+        font-size: 0.75rem !important;
         font-weight: 700 !important;
         text-transform: uppercase;
-        letter-spacing: 0.7px;
+        letter-spacing: 0.5px;
+        white-space: normal !important; /* Biarkan teks turun ke bawah */
+        line-height: 1.3 !important;
     }
     [data-testid="stMetricValue"] {
         font-family: 'Poppins', sans-serif !important;
         color: #0071CE !important;
-        font-size: 1.85rem !important;
+        font-size: 1.6rem !important;
         font-weight: 800 !important;
-        line-height: 1.15 !important;
-        margin-top: 0.15rem;
-    }
-    [data-testid="stMetricDelta"] {
-        font-family: 'Inter', sans-serif !important;
-        font-size: 0.92rem !important;
-        font-weight: 600;
+        white-space: nowrap !important;
     }
 
     /* ============================== SIDEBAR ============================= */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #FFFFFF 0%, #F5FAFE 100%);
+        background: #FFFFFF;
         border-right: 1px solid #E6ECF3;
-        box-shadow: 2px 0 14px rgba(4, 30, 66, 0.04);
+        box-shadow: 2px 0 12px rgba(4, 30, 66, 0.03);
     }
     [data-testid="stSidebar"] h2 {
         color: #0071CE !important;
-        font-family: 'Poppins', sans-serif !important;
-        font-weight: 800 !important;
-        font-size: 1.25rem !important;
-        padding-bottom: 0.5rem;
+        font-size: 1.2rem !important;
         border-bottom: 3px solid #FFC220;
         display: inline-block;
+        padding-bottom: 0.4rem;
+        margin-bottom: 1rem;
     }
     [data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
         color: #041E42 !important;
-        font-weight: 700 !important;
+        font-weight: 600 !important;
         font-size: 0.85rem !important;
-        font-family: 'Poppins', sans-serif !important;
-    }
-    [data-testid="stSidebar"] [data-testid="stCaptionContainer"],
-    [data-testid="stSidebar"] .stCaption {
-        color: #64748B !important;
-        font-size: 0.82rem !important;
     }
     [data-testid="stSidebar"] [data-testid="stExpander"] {
-        background: #FFFFFF !important;
+        background: #F8FAFD !important;
         border: 1px solid #E6ECF3 !important;
-        border-radius: 14px !important;
-        box-shadow: 0 2px 10px rgba(4, 30, 66, 0.05);
-        margin-bottom: 0.7rem;
-    }
-    [data-testid="stSidebar"] [data-testid="stExpander"] summary {
-        background: #F5FAFE !important;
-        color: #0071CE !important;
-        font-weight: 700 !important;
-        border-radius: 14px !important;
-    }
-    [data-testid="stSidebar"] hr {
-        border-top: 1px dashed #CBD5E0 !important;
-        margin: 1rem 0 !important;
-    }
-
-    /* ============================== TABS ================================ */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 6px;
-        background: #FFFFFF;
-        padding: 8px;
-        border-radius: 16px;
-        border: 1px solid #E6ECF3;
-        box-shadow: 0 3px 12px rgba(4, 30, 66, 0.05);
-        margin-bottom: 1.2rem;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background: transparent;
-        border: none !important;
-        border-radius: 11px;
-        padding: 11px 18px !important;
-        font-family: 'Poppins', sans-serif !important;
-        font-size: 0.9rem !important;
-        font-weight: 600 !important;
-        color: #4A5568 !important;
-        transition: all 0.2s ease;
-        height: auto !important;
-    }
-    .stTabs [data-baseweb="tab"]:hover {
-        background: #F5FAFE !important;
-        color: #0071CE !important;
-    }
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #0071CE 0%, #0057A8 100%) !important;
-        color: #FFFFFF !important;
-        box-shadow: 0 6px 16px rgba(0, 113, 206, 0.32);
-    }
-    .stTabs [data-baseweb="tab-highlight"] { display: none; }
-    .stTabs [data-baseweb="tab-border"] { display: none; }
-
-    /* ============================== BUTTONS ============================= */
-    .stButton > button,
-    .stDownloadButton > button {
-        background: linear-gradient(135deg, #0071CE 0%, #0057A8 100%) !important;
-        border: none !important;
-        border-radius: 999px !important;
-        color: #FFFFFF !important;
-        font-family: 'Poppins', sans-serif !important;
-        font-size: 0.9rem !important;
-        font-weight: 700 !important;
-        padding: 0.65rem 1.6rem !important;
-        box-shadow: 0 5px 16px rgba(0, 113, 206, 0.35) !important;
-        transition: all 0.2s ease;
-    }
-    .stButton > button:hover,
-    .stDownloadButton > button:hover {
-        transform: translateY(-2px);
-        background: linear-gradient(135deg, #0084EC 0%, #0066C4 100%) !important;
-        box-shadow: 0 8px 22px rgba(0, 113, 206, 0.5) !important;
-    }
-    .stButton > button:active,
-    .stDownloadButton > button:active {
-        transform: translateY(0);
-        box-shadow: 0 3px 10px rgba(0, 113, 206, 0.4) !important;
-    }
-
-    /* ============================== EXPANDER ============================ */
-    [data-testid="stExpander"] {
-        background: #FFFFFF;
-        border: 1px solid #E6ECF3 !important;
-        border-radius: 16px !important;
-        box-shadow: 0 3px 14px rgba(4, 30, 66, 0.06);
-        overflow: hidden;
-    }
-    [data-testid="stExpander"] summary {
-        background: linear-gradient(135deg, #F5FAFE 0%, #EBF5FE 100%) !important;
-        font-family: 'Poppins', sans-serif !important;
-        font-weight: 700 !important;
-        color: #0071CE !important;
-        padding: 0.9rem 1.1rem !important;
-        border-bottom: 1px solid #E6ECF3;
-    }
-    [data-testid="stExpander"] summary:hover {
-        background: linear-gradient(135deg, #EBF5FE 0%, #E1EFFA 100%) !important;
-    }
-
-    /* ============================== CONTAINER (border=True) ============= */
-    [data-testid="stVerticalBlockBorderWrapper"] {
-        background: #FFFFFF;
-        border: 1px solid #E6ECF3 !important;
-        border-radius: 16px !important;
-        padding: 0.5rem !important;
-        box-shadow: 0 4px 16px rgba(4, 30, 66, 0.06);
-        transition: box-shadow 0.2s ease;
-    }
-    [data-testid="stVerticalBlockBorderWrapper"]:hover {
-        box-shadow: 0 6px 22px rgba(0, 113, 206, 0.12);
-    }
-    [data-testid="stVerticalBlockBorderWrapper"] p,
-    [data-testid="stVerticalBlockBorderWrapper"] li {
-        color: #1A2B4A !important;
-    }
-    [data-testid="stVerticalBlockBorderWrapper"] b {
-        color: #041E42;
-    }
-
-    /* ============================== DATAFRAME =========================== */
-    [data-testid="stDataFrame"] {
-        border: 1px solid #E6ECF3 !important;
-        border-radius: 14px !important;
-        overflow: hidden;
-        box-shadow: 0 3px 14px rgba(4, 30, 66, 0.06);
-        background: #FFFFFF !important;
-    }
-
-    /* ============================== PLOTLY ============================== */
-    [data-testid="stPlotlyChart"] {
-        background: #FFFFFF;
-        border: 1px solid #E6ECF3;
-        border-radius: 16px;
-        padding: 10px;
-        box-shadow: 0 3px 14px rgba(4, 30, 66, 0.06);
-    }
-
-    /* ============================== SLIDER ============================== */
-    [data-testid="stSlider"] {
-        background: #FFFFFF;
-        border: 1px solid #E6ECF3;
-        border-radius: 14px;
-        padding: 1rem 1.2rem;
-        box-shadow: 0 2px 10px rgba(4, 30, 66, 0.04);
-    }
-    [data-testid="stSlider"] label {
-        color: #041E42 !important;
-        font-family: 'Poppins', sans-serif !important;
-        font-size: 0.85rem !important;
-        font-weight: 600 !important;
-    }
-
-    /* ============================== MULTISELECT ========================= */
-    .stMultiSelect [data-baseweb="select"] > div {
-        background: #FFFFFF !important;
-        border: 1px solid #CBD5E0 !important;
         border-radius: 10px !important;
         box-shadow: none !important;
     }
-    .stMultiSelect [data-baseweb="select"] > div:focus-within {
-        border-color: #0071CE !important;
-        box-shadow: 0 0 0 3px rgba(0, 113, 206, 0.15) !important;
-    }
-    .stMultiSelect [data-baseweb="tag"] {
-        background: linear-gradient(135deg, #0071CE 0%, #0057A8 100%) !important;
-        border: none !important;
-        border-radius: 8px !important;
-        color: white !important;
-        font-family: 'Poppins', sans-serif !important;
-        font-size: 0.75rem !important;
+    [data-testid="stSidebar"] [data-testid="stExpander"] summary {
+        background: transparent !important;
         font-weight: 600 !important;
+        color: #0071CE !important;
     }
-
-    /* ============================== FILE UPLOADER ======================= */
+    
+    /* Perbaikan file uploader di sidebar */
     [data-testid="stFileUploader"] {
-        background: #F5FAFE;
-        border: 2px dashed #78B9E7;
-        border-radius: 12px;
-        padding: 0.9rem;
+        padding: 0.5rem;
     }
-    [data-testid="stFileUploader"]:hover {
+    [data-testid="stFileUploader"] section {
+        border: 2px dashed #78B9E7;
+        border-radius: 10px;
+        background: #F5FAFE;
+    }
+    [data-testid="stFileUploader"] section:hover {
         border-color: #0071CE;
         background: #EBF5FE;
     }
-    [data-testid="stFileUploader"] label {
-        color: #041E42 !important;
+    /* Sembunyikan teks 'Browse files' bawaan jika bertumpuk */
+    [data-testid="stFileUploader"] button span {
+        display: none;
+    }
+    [data-testid="stFileUploader"] button::after {
+        content: 'Pilih Berkas';
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+    }
+
+    /* ============================== TABS ================================ */
+    /* PERBAIKAN: Gaya tab dibuat bergaris bawah agar tidak terpotong */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background: transparent !important;
+        border-bottom: 2px solid #E6ECF3;
+        padding-bottom: 0px;
+        margin-bottom: 1.5rem;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background: transparent !important;
+        border: none !important;
+        border-radius: 8px 8px 0 0 !important;
+        padding: 10px 20px !important;
         font-family: 'Poppins', sans-serif !important;
-        font-size: 0.82rem !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        color: #64748B !important;
+        transition: all 0.2s ease;
+    }
+    .stTabs [data-baseweb="tab"]:hover {
+        color: #0071CE !important;
+        background: #F8FAFD !important;
+    }
+    .stTabs [aria-selected="true"] {
+        background: #EAF4FC !important;
+        color: #0071CE !important;
+        border-bottom: 3px solid #0071CE !important;
+    }
+    /* Sembunyikan highlight bawaan Streamlit */
+    .stTabs [data-baseweb="tab-highlight"] {
+        display: none !important;
+    }
+    .stTabs [data-baseweb="tab-border"] {
+        display: none !important;
+    }
+
+    /* ============================== BUTTONS ============================= */
+    .stButton > button, .stDownloadButton > button {
+        background: #0071CE !important;
+        border: none !important;
+        border-radius: 8px !important;
+        color: #FFFFFF !important;
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 600 !important;
+        padding: 0.5rem 1.2rem !important;
+        box-shadow: 0 4px 10px rgba(0, 113, 206, 0.3) !important;
+        transition: all 0.2s ease;
+    }
+    .stButton > button:hover, .stDownloadButton > button:hover {
+        transform: translateY(-2px);
+        background: #0057A8 !important;
+        box-shadow: 0 6px 15px rgba(0, 113, 206, 0.4) !important;
+    }
+
+    /* ============================== COMPONENT WRAPPERS ================== */
+    [data-testid="stExpander"] {
+        border: 1px solid #E6ECF3 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
+    }
+    [data-testid="stExpander"] summary {
+        background: #F8FAFD !important;
+        color: #0071CE !important;
         font-weight: 600 !important;
     }
-
-    /* ============================== CAPTION ============================= */
-    [data-testid="stCaptionContainer"],
-    .stCaption {
-        color: #64748B !important;
-        font-size: 0.87rem !important;
-        font-style: italic;
-    }
-
-    /* ============================== ALERTS ============================== */
-    .stAlert {
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        background: #FFFFFF;
+        border: 1px solid #E6ECF3 !important;
         border-radius: 12px !important;
-        border: none !important;
-        box-shadow: 0 3px 12px rgba(4, 30, 66, 0.08);
+        padding: 1rem !important;
+        box-shadow: 0 4px 14px rgba(4, 30, 66, 0.04);
+    }
+    [data-testid="stPlotlyChart"], [data-testid="stDataFrame"] {
+        background: #FFFFFF;
+        border: 1px solid #E6ECF3;
+        border-radius: 12px;
+        padding: 8px;
+        box-shadow: 0 3px 12px rgba(4, 30, 66, 0.04);
     }
 
-    /* ============================== DIVIDER ============================= */
+    /* ============================== SCROLLBAR & MISC ==================== */
     hr {
-        border: none;
         border-top: 1px dashed #CBD5E0 !important;
-        margin: 1.6rem 0 !important;
+        margin: 1.5rem 0 !important;
     }
-
-    /* ============================== SCROLLBAR =========================== */
-    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: #F1F5F9; }
-    ::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, #0071CE, #0057A8);
-        border-radius: 10px;
-    }
-    ::-webkit-scrollbar-thumb:hover { background: #041E42; }
-
-    /* ============================== MISC ================================ */
+    ::-webkit-scrollbar-thumb { background: #78B9E7; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #0071CE; }
     #MainMenu, footer { visibility: hidden; }
     </style>
     """,
@@ -522,7 +413,7 @@ st.markdown(
 
 
 # ----------------------------------------------------------------------------
-# HERO — WALMART EDITION dengan SPARK LOGO
+# HERO — WALMART EDITION
 # ----------------------------------------------------------------------------
 st.markdown(
     """
@@ -611,7 +502,6 @@ def pct(x, d=1, sign=True):
 
 
 def interpretasi(judul, teks):
-    """Kotak interpretasi bergaya kartu Walmart."""
     st.markdown(
         f'<div class="interp"><b>💡 {judul}</b>{teks}</div>',
         unsafe_allow_html=True,
@@ -619,7 +509,6 @@ def interpretasi(judul, teks):
 
 
 def catatan(teks):
-    """Kotak catatan / peringatan metodologis."""
     st.markdown(f'<div class="note"><b>📌 Catatan Metodologis</b><br>{teks}</div>',
                 unsafe_allow_html=True)
 
@@ -1004,9 +893,11 @@ def simulate(df, uplift_peak, recovery):
 st.sidebar.markdown("## 🛒 Panel Pengaturan")
 st.sidebar.caption("Pilih berkas data serta filter periode dan toko yang ingin dianalisis.")
 
-with st.sidebar.expander("📂 Sumber Data", expanded=True):
-    uploaded = st.sidebar.file_uploader("Unggah berkas CSV (opsional)", type="csv")
-    st.caption(f"Jika tidak diunggah, sistem otomatis membaca `{DEFAULT_FILE}` dari folder aplikasi.")
+# PERBAIKAN: Menggunakan st.expander di dalam blok with, bukan st.sidebar.expander
+with st.sidebar:
+    with st.expander("📂 Sumber Data", expanded=True):
+        uploaded = st.file_uploader("Unggah berkas CSV (opsional)", type="csv")
+        st.caption(f"Jika tidak diunggah, sistem membaca `{DEFAULT_FILE}` dari folder aplikasi.")
 
 try:
     if uploaded is not None:
@@ -1026,11 +917,12 @@ except ValueError as e:
 years_all = sorted(df_all.Year.unique().tolist())
 stores_all = sorted(df_all.Store.unique().tolist())
 
-with st.sidebar.expander("🔎 Filter Data", expanded=True):
-    sel_years = st.multiselect("Tahun", years_all, default=years_all)
-    sel_stores = st.multiselect("Toko", stores_all, default=stores_all)
-    st.caption("Filter berlaku untuk tab 1–4. Tab **Pusat Keputusan** selalu menggunakan "
-               "seluruh data agar rekomendasi tetap stabil dan konsisten.")
+with st.sidebar:
+    with st.expander("🔎 Filter Data", expanded=True):
+        sel_years = st.multiselect("Tahun", years_all, default=years_all)
+        sel_stores = st.multiselect("Toko", stores_all, default=stores_all)
+        st.caption("Filter berlaku untuk tab 1–4. Tab **Pusat Keputusan** selalu menggunakan "
+                   "seluruh data agar rekomendasi stabil.")
 
 df = df_all[df_all.Year.isin(sel_years) & df_all.Store.isin(sel_stores)]
 if df.empty:
@@ -1040,7 +932,7 @@ if df.empty:
 st.sidebar.markdown("---")
 st.sidebar.caption(f"🛒 **Data aktif:** {len(df):,} baris · "
                    f"{df.Store.nunique()} toko · {df.Year.nunique()} tahun")
-st.sidebar.caption("Save Money. Live Better. · Walmart BI v2.0")
+st.sidebar.caption("Save Money. Live Better. · Walmart BI v2.1")
 
 # ----------------------------------------------------------------------------
 # TAB
