@@ -69,12 +69,21 @@ st.markdown(
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-    /* ============================== GLOBAL ============================== */
-    html, body, [class*="css"], p, li, span, label, .stMarkdown, div {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    /* ============================== GLOBAL TYPOGRAPHY =================== */
+    /* Menghindari override pada font ikon Streamlit (Material Icons) */
+    html, body, [class*="css"] {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         color: #2E2F32;
     }
-    p, li { font-size: 1rem !important; line-height: 1.6 !important; }
+    
+    p, li, .stMarkdown, label, .stText { 
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; 
+    }
+
+    /* Pastikan ikon Streamlit tetap menggunakan font Material */
+    [data-testid="stIconMaterial"], .material-icons, .material-symbols-rounded {
+        font-family: 'Material Symbols Rounded', 'Material Icons' !important;
+    }
 
     .stApp {
         background:
@@ -92,18 +101,18 @@ st.markdown(
         border-bottom: 1px solid #E6ECF3;
     }
 
+    /* Sembunyikan ikon Copy Link di samping judul (Heading) */
+    [data-testid="stHeaderActionElements"] {
+        display: none !important;
+    }
+
     /* ============================== HEADINGS ============================ */
-    h1, h2 {
+    h1, h2, h3, h4, h5, h6 {
         font-family: 'Poppins', sans-serif !important;
         color: #041E42 !important;
-        font-weight: 800 !important;
-        letter-spacing: -0.3px;
-        line-height: 1.3 !important;
     }
     
     h3 {
-        font-family: 'Poppins', sans-serif !important;
-        color: #041E42 !important;
         font-weight: 700 !important;
         font-size: 1.3rem !important;
         margin-top: 1.5rem !important;
@@ -111,18 +120,13 @@ st.markdown(
         padding-bottom: 0.5rem;
         border-bottom: 3px solid #FFC220;
         display: inline-block;
-        letter-spacing: -0.2px;
     }
 
     h4 {
-        font-family: 'Poppins', sans-serif !important;
-        color: #0071CE !important;
         font-weight: 700 !important;
         font-size: 1.1rem !important;
+        color: #0071CE !important;
         margin-top: 1.2rem !important;
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
     }
 
     /* ============================== HERO ================================= */
@@ -162,8 +166,6 @@ st.markdown(
         flex-shrink: 0;
         filter: drop-shadow(0 6px 16px rgba(255,194,32,0.55));
     }
-    
-    /* PERBAIKAN: Warna H1 di hero dipaksa putih */
     .hero-text h1 {
         color: #FFFFFF !important;
         margin: 0 !important;
@@ -227,7 +229,6 @@ st.markdown(
     }
 
     /* ============================== METRICS (KPI) ======================= */
-    /* PERBAIKAN: Agar teks label tidak terpotong */
     [data-testid="stMetric"] {
         background: #FFFFFF;
         border-radius: 14px;
@@ -236,7 +237,7 @@ st.markdown(
         border-top: 4px solid #0071CE;
         box-shadow: 0 4px 14px rgba(4, 30, 66, 0.05);
         transition: transform 0.2s ease;
-        height: 100%; 
+        height: auto !important; /* Biarkan tinggi menyesuaikan teks */
         overflow: visible;
     }
     [data-testid="stMetric"]:hover {
@@ -250,8 +251,9 @@ st.markdown(
         font-weight: 700 !important;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        white-space: normal !important; /* Biarkan teks turun ke bawah */
+        white-space: normal !important; /* Teks turun ke bawah jika panjang */
         line-height: 1.3 !important;
+        word-wrap: break-word !important;
     }
     [data-testid="stMetricValue"] {
         font-family: 'Poppins', sans-serif !important;
@@ -275,48 +277,37 @@ st.markdown(
         padding-bottom: 0.4rem;
         margin-bottom: 1rem;
     }
-    [data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
-        color: #041E42 !important;
-        font-weight: 600 !important;
-        font-size: 0.85rem !important;
-    }
-    [data-testid="stSidebar"] [data-testid="stExpander"] {
-        background: #F8FAFD !important;
-        border: 1px solid #E6ECF3 !important;
-        border-radius: 10px !important;
-        box-shadow: none !important;
-    }
-    [data-testid="stSidebar"] [data-testid="stExpander"] summary {
-        background: transparent !important;
-        font-weight: 600 !important;
-        color: #0071CE !important;
-    }
     
-    /* Perbaikan file uploader di sidebar */
-    [data-testid="stFileUploader"] {
-        padding: 0.5rem;
+    /* Perbaikan Expander */
+    [data-testid="stExpander"] {
+        border: 1px solid #E6ECF3 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
+        background: #FFFFFF !important;
     }
-    [data-testid="stFileUploader"] section {
-        border: 2px dashed #78B9E7;
-        border-radius: 10px;
-        background: #F5FAFE;
+    [data-testid="stExpander"] summary {
+        background: #F8FAFD !important;
+        color: #0071CE !important;
+        font-weight: 600 !important;
+        padding: 0.8rem 1rem !important;
+        border-radius: 12px !important;
     }
-    [data-testid="stFileUploader"] section:hover {
-        border-color: #0071CE;
-        background: #EBF5FE;
+
+    /* Perbaikan Multiselect Tag (Warna Biru Walmart) */
+    [data-baseweb="tag"] {
+        background-color: #0071CE !important;
+        border: none !important;
+        border-radius: 6px !important;
     }
-    /* Sembunyikan teks 'Browse files' bawaan jika bertumpuk */
-    [data-testid="stFileUploader"] button span {
-        display: none;
+    [data-baseweb="tag"] span {
+        color: #FFFFFF !important;
+        font-family: 'Inter', sans-serif !important;
     }
-    [data-testid="stFileUploader"] button::after {
-        content: 'Pilih Berkas';
-        font-family: 'Poppins', sans-serif;
-        font-weight: 600;
+    [data-baseweb="tag"] svg {
+        fill: #FFFFFF !important;
     }
 
     /* ============================== TABS ================================ */
-    /* PERBAIKAN: Gaya tab dibuat bergaris bawah agar tidak terpotong */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
         background: transparent !important;
@@ -344,43 +335,11 @@ st.markdown(
         color: #0071CE !important;
         border-bottom: 3px solid #0071CE !important;
     }
-    /* Sembunyikan highlight bawaan Streamlit */
-    .stTabs [data-baseweb="tab-highlight"] {
+    .stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] {
         display: none !important;
-    }
-    .stTabs [data-baseweb="tab-border"] {
-        display: none !important;
-    }
-
-    /* ============================== BUTTONS ============================= */
-    .stButton > button, .stDownloadButton > button {
-        background: #0071CE !important;
-        border: none !important;
-        border-radius: 8px !important;
-        color: #FFFFFF !important;
-        font-family: 'Poppins', sans-serif !important;
-        font-weight: 600 !important;
-        padding: 0.5rem 1.2rem !important;
-        box-shadow: 0 4px 10px rgba(0, 113, 206, 0.3) !important;
-        transition: all 0.2s ease;
-    }
-    .stButton > button:hover, .stDownloadButton > button:hover {
-        transform: translateY(-2px);
-        background: #0057A8 !important;
-        box-shadow: 0 6px 15px rgba(0, 113, 206, 0.4) !important;
     }
 
     /* ============================== COMPONENT WRAPPERS ================== */
-    [data-testid="stExpander"] {
-        border: 1px solid #E6ECF3 !important;
-        border-radius: 12px !important;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
-    }
-    [data-testid="stExpander"] summary {
-        background: #F8FAFD !important;
-        color: #0071CE !important;
-        font-weight: 600 !important;
-    }
     [data-testid="stVerticalBlockBorderWrapper"] {
         background: #FFFFFF;
         border: 1px solid #E6ECF3 !important;
@@ -450,16 +409,28 @@ st.markdown(
 # HELPER TAMPILAN
 # ----------------------------------------------------------------------------
 def show(fig, height=420):
+    # Perbaikan: Margin atas diperbesar agar Judul dan Legenda tidak bertabrakan
     fig.update_layout(
         template="plotly_white",
         height=height,
-        margin=dict(l=10, r=10, t=55, b=10),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0,
-                    bgcolor="rgba(255,255,255,0.9)",
-                    bordercolor="#E6ECF3", borderwidth=1),
+        margin=dict(l=10, r=10, t=80, b=10), # t=80 memberi ruang vertikal
+        legend=dict(
+            orientation="h", 
+            yanchor="bottom", 
+            y=1.02, 
+            x=0,
+            bgcolor="rgba(255,255,255,0.9)",
+            bordercolor="#E6ECF3", 
+            borderwidth=1
+        ),
         font=dict(family="Inter, sans-serif", size=12, color="#2E2F32"),
-        title=dict(font=dict(family="Poppins, sans-serif", size=14,
-                             color="#041E42", weight="bold")),
+        title=dict(
+            font=dict(family="Poppins, sans-serif", size=14, color="#041E42", weight="bold"),
+            y=0.98, # Posisi judul sedikit di bawah margin atas
+            x=0,
+            xanchor='left',
+            yanchor='top'
+        ),
         plot_bgcolor="white",
         paper_bgcolor="white",
     )
@@ -893,8 +864,8 @@ def simulate(df, uplift_peak, recovery):
 st.sidebar.markdown("## 🛒 Panel Pengaturan")
 st.sidebar.caption("Pilih berkas data serta filter periode dan toko yang ingin dianalisis.")
 
-# PERBAIKAN: Menggunakan st.expander di dalam blok with, bukan st.sidebar.expander
 with st.sidebar:
+    # Perbaikan: Layout rapi untuk file uploader dan expander
     with st.expander("📂 Sumber Data", expanded=True):
         uploaded = st.file_uploader("Unggah berkas CSV (opsional)", type="csv")
         st.caption(f"Jika tidak diunggah, sistem membaca `{DEFAULT_FILE}` dari folder aplikasi.")
@@ -932,7 +903,7 @@ if df.empty:
 st.sidebar.markdown("---")
 st.sidebar.caption(f"🛒 **Data aktif:** {len(df):,} baris · "
                    f"{df.Store.nunique()} toko · {df.Year.nunique()} tahun")
-st.sidebar.caption("Save Money. Live Better. · Walmart BI v2.1")
+st.sidebar.caption("Save Money. Live Better. · Walmart BI v2.2")
 
 # ----------------------------------------------------------------------------
 # TAB
