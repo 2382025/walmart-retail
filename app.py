@@ -1,3 +1,14 @@
+Berikut adalah perbaikan kode secara menyeluruh untuk mendukung **Mode Terang & Gelap (Dark/Light Mode)**. 
+
+**Pendekatan yang Digunakan:**
+1. **CSS Variables (`:root`)**: Alih-alih menulis *hardcode* warna putih di setiap komponen, kita mendefinisikan variabel (seperti `--bg-card`, `--text-main`). Saat tombol sakelar ditekan, sistem hanya perlu mengganti nilai variabel tersebut, sehingga tidak ada warna yang bertabrakan.
+2. **Plotly Dinamis**: Fungsi `show()` telah diperbarui untuk membaca mode saat ini dan menyesuaikan warna *background*, *grid*, dan *font* pada grafik secara otomatis.
+3. **Tombol Toggle di Sidebar**: Menambahkan `st.toggle` yang mengubah `st.session_state.theme` dan memicu Streamlit untuk merender ulang UI dengan palet warna yang sesuai.
+4. **Kotak Interpretasi & Catatan**: Warna *background* dan teks pada kotak ini juga disesuaikan agar tetap kontras dan enak dibaca di mode gelap.
+
+Berikut adalah kode lengkapnya:
+
+```python
 """
 Walmart Business Intelligence - Decision Support Dashboard
 ===========================================================
@@ -16,7 +27,7 @@ Susunan aplikasi:
     4. Faktor Eksternal      - suhu, BBM, CPI, pengangguran
     5. Pusat Keputusan       - rekomendasi keputusan berbasis data + simulasi what-if
 
-Tema UI   : Walmart Brand (Spark Blue + Sun Yellow)
+Tema UI   : Walmart Brand (Spark Blue + Sun Yellow) dengan Dukungan Dark/Light Mode
 Disusun oleh : Kelompok 2
 Mata Kuliah  : Business Intelligence / Analitik Data
 """
@@ -37,6 +48,14 @@ st.set_page_config(
     page_icon="🛒",
     layout="wide",
 )
+
+# ----------------------------------------------------------------------------
+# STATE MANAGEMENT UNTUK TEMA
+# ----------------------------------------------------------------------------
+if "theme" not in st.session_state:
+    st.session_state.theme = "Light"
+
+is_dark = st.session_state.theme == "Dark"
 
 # Palet warna resmi Walmart
 WALMART_BLUE   = "#0071CE"
@@ -62,57 +81,105 @@ DEFAULT_FILE = "Walmart_Cleaned.csv"
 
 
 # ----------------------------------------------------------------------------
-# GAYA VISUAL — WALMART EDITION (FIXED CSS)
+# DEFINISI VARIABEL WARNA BERDASARKAN TEMA
+# ----------------------------------------------------------------------------
+if is_dark:
+    BG_MAIN = "#0F172A"         # Slate 900
+    BG_CARD = "#1E293B"         # Slate 800
+    TEXT_MAIN = "#F8FAFC"       # Slate 50
+    TEXT_MUTED = "#94A3B8"      # Slate 400
+    BORDER = "#334155"          # Slate 700
+    HEADER_BG = "rgba(15, 23, 42, 0.85)"
+    
+    # Interpretasi & Catatan Dark Mode
+    INTERP_BG = "#1E3A8A"       # Blue 900
+    INTERP_TEXT = "#DBEAFE"     # Blue 100
+    INTERP_BORDER = "#3B82F6"   # Blue 500
+    
+    NOTE_BG = "#422006"         # Yellow 900
+    NOTE_TEXT = "#FEF08A"       # Yellow 200
+    NOTE_BORDER = "#EAB308"     # Yellow 500
+else:
+    BG_MAIN = "#F8FAFD"
+    BG_CARD = "#FFFFFF"
+    TEXT_MAIN = "#2E2F32"
+    TEXT_MUTED = "#64748B"
+    BORDER = "#E6ECF3"
+    HEADER_BG = "rgba(255, 255, 255, 0.85)"
+    
+    # Interpretasi & Catatan Light Mode
+    INTERP_BG = "#EAF4FC"
+    INTERP_TEXT = "#1A2B4A"
+    INTERP_BORDER = "#0071CE"
+    
+    NOTE_BG = "#FFF8E1"
+    NOTE_TEXT = "#5C4400"
+    NOTE_BORDER = "#FFC220"
+
+
+# ----------------------------------------------------------------------------
+# GAYA VISUAL — WALMART EDITION (CSS VARIABLES)
 # ----------------------------------------------------------------------------
 st.markdown(
-    """
+    f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
+    /* ============================== ROOT VARIABLES ====================== */
+    :root {{
+        --bg-main: {BG_MAIN};
+        --bg-card: {BG_CARD};
+        --text-main: {TEXT_MAIN};
+        --text-muted: {TEXT_MUTED};
+        --border-color: {BORDER};
+        --header-bg: {HEADER_BG};
+    }}
+
     /* ============================== GLOBAL TYPOGRAPHY =================== */
-    /* Menghindari override pada font ikon Streamlit (Material Icons) */
-    html, body, [class*="css"] {
+    html, body, [class*="css"] {{
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        color: #2E2F32;
-    }
+        color: var(--text-main);
+    }}
     
-    p, li, .stMarkdown, label, .stText { 
+    p, li, .stMarkdown, label, .stText {{ 
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; 
-    }
+    }}
 
     /* Pastikan ikon Streamlit tetap menggunakan font Material */
-    [data-testid="stIconMaterial"], .material-icons, .material-symbols-rounded {
+    [data-testid="stIconMaterial"], .material-icons, .material-symbols-rounded {{
         font-family: 'Material Symbols Rounded', 'Material Icons' !important;
-    }
+    }}
 
-    .stApp {
-        background:
-            radial-gradient(circle at 0% 0%, #EAF4FC 0%, transparent 45%),
-            radial-gradient(circle at 100% 100%, #FFF5D6 0%, transparent 45%),
-            linear-gradient(180deg, #F8FAFD 0%, #F1F6FB 100%);
+    .stApp {{
+        background: var(--bg-main);
+        background-image: 
+            radial-gradient(circle at 0% 0%, rgba(0, 113, 206, 0.05) 0%, transparent 45%),
+            radial-gradient(circle at 100% 100%, rgba(255, 194, 32, 0.05) 0%, transparent 45%);
         background-attachment: fixed;
-    }
+    }}
 
-    [data-testid="stAppViewContainer"], [data-testid="stMain"] { background: transparent !important; }
+    [data-testid="stAppViewContainer"], [data-testid="stMain"] {{ 
+        background: transparent !important; 
+    }}
 
-    [data-testid="stHeader"] {
-        background: rgba(255, 255, 255, 0.85) !important;
+    [data-testid="stHeader"] {{
+        background: var(--header-bg) !important;
         backdrop-filter: blur(8px);
-        border-bottom: 1px solid #E6ECF3;
-    }
+        border-bottom: 1px solid var(--border-color);
+    }}
 
-    /* Sembunyikan ikon Copy Link di samping judul (Heading) */
-    [data-testid="stHeaderActionElements"] {
+    /* Sembunyikan ikon Copy Link di samping judul */
+    [data-testid="stHeaderActionElements"] {{
         display: none !important;
-    }
+    }}
 
     /* ============================== HEADINGS ============================ */
-    h1, h2, h3, h4, h5, h6 {
+    h1, h2, h3, h4, h5, h6 {{
         font-family: 'Poppins', sans-serif !important;
-        color: #041E42 !important;
-    }
+        color: var(--text-main) !important;
+    }}
     
-    h3 {
+    h3 {{
         font-weight: 700 !important;
         font-size: 1.3rem !important;
         margin-top: 1.5rem !important;
@@ -120,17 +187,17 @@ st.markdown(
         padding-bottom: 0.5rem;
         border-bottom: 3px solid #FFC220;
         display: inline-block;
-    }
+    }}
 
-    h4 {
+    h4 {{
         font-weight: 700 !important;
         font-size: 1.1rem !important;
-        color: #0071CE !important;
+        color: #0071CE !important; /* Tetap biru agar kontras di kedua mode */
         margin-top: 1.2rem !important;
-    }
+    }}
 
     /* ============================== HERO ================================= */
-    .hero {
+    .hero {{
         background: linear-gradient(135deg, #0071CE 0%, #0057A8 55%, #041E42 100%);
         border-radius: 20px;
         padding: 2rem 2.4rem;
@@ -139,70 +206,70 @@ st.markdown(
         box-shadow: 0 12px 30px rgba(0, 113, 206, 0.25);
         position: relative;
         overflow: hidden;
-    }
-    .hero::before {
+    }}
+    .hero::before {{
         content: '';
         position: absolute;
         top: -120px; right: -80px;
         width: 420px; height: 420px;
         background: radial-gradient(circle, rgba(255,194,32,0.22) 0%, transparent 65%);
         pointer-events: none;
-    }
-    .hero::after {
+    }}
+    .hero::after {{
         content: '';
         position: absolute;
         bottom: 0; left: 0; right: 0;
         height: 6px;
         background: linear-gradient(90deg, #FFC220 0%, #FFA000 100%);
-    }
-    .hero-inner {
+    }}
+    .hero-inner {{
         display: flex;
         align-items: center;
         gap: 1.6rem;
         position: relative;
         z-index: 1;
-    }
-    .hero-spark {
+    }}
+    .hero-spark {{
         flex-shrink: 0;
         filter: drop-shadow(0 6px 16px rgba(255,194,32,0.55));
-    }
-    .hero-text h1 {
+    }}
+    .hero-text h1 {{
         color: #FFFFFF !important;
         margin: 0 !important;
         font-size: 1.7rem !important;
         text-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-    .hero-text p {
+    }}
+    .hero-text p {{
         color: #E8F2FC !important;
         margin: 0.5rem 0 0 0 !important;
         font-size: 1rem !important;
-    }
-    .hero-text .slogan {
+    }}
+    .hero-text .slogan {{
         color: #FFC220 !important;
         font-family: 'Poppins', sans-serif !important;
         font-weight: 700 !important;
         font-style: italic;
         font-size: 0.95rem !important;
         margin-top: 0.7rem !important;
-    }
-    .hero-text .meta {
+    }}
+    .hero-text .meta {{
         color: #B8D4EC !important;
         font-size: 0.85rem !important;
         margin-top: 0.5rem !important;
-    }
+    }}
 
     /* ============================== INTERPRETASI & CATATAN ============== */
-    .interp {
-        background: linear-gradient(135deg, #EAF4FC 0%, #F5FAFE 100%);
-        border-left: 5px solid #0071CE;
+    .interp {{
+        background: {INTERP_BG};
+        border-left: 5px solid {INTERP_BORDER};
         border-radius: 12px;
         padding: 1rem 1.2rem;
         margin: 1rem 0;
-        color: #1A2B4A;
+        color: {INTERP_TEXT};
         box-shadow: 0 3px 12px rgba(0, 113, 206, 0.06);
-    }
-    .interp > b:first-child {
-        color: #0071CE;
+    }}
+    .interp > b:first-child {{
+        color: {INTERP_BORDER};
         font-family: 'Poppins', sans-serif;
         font-size: 0.8rem;
         font-weight: 800;
@@ -210,112 +277,112 @@ st.markdown(
         letter-spacing: 1px;
         display: block;
         margin-bottom: 0.4rem;
-    }
-    .note {
-        background: linear-gradient(135deg, #FFF8E1 0%, #FFF3C4 100%);
-        border-left: 5px solid #FFC220;
+    }}
+    .note {{
+        background: {NOTE_BG};
+        border-left: 5px solid {NOTE_BORDER};
         border-radius: 12px;
         padding: 1rem 1.2rem;
         margin: 1rem 0;
-        color: #5C4400;
+        color: {NOTE_TEXT};
         box-shadow: 0 3px 12px rgba(255, 194, 32, 0.15);
-    }
-    .note b {
-        color: #B77700;
+    }}
+    .note b {{
+        color: {NOTE_BORDER};
         font-family: 'Poppins', sans-serif;
         font-size: 0.8rem;
         font-weight: 800;
         text-transform: uppercase;
-    }
+    }}
 
     /* ============================== METRICS (KPI) ======================= */
-    [data-testid="stMetric"] {
-        background: #FFFFFF;
+    [data-testid="stMetric"] {{
+        background: var(--bg-card);
         border-radius: 14px;
         padding: 1.2rem;
-        border: 1px solid #E6ECF3;
+        border: 1px solid var(--border-color);
         border-top: 4px solid #0071CE;
-        box-shadow: 0 4px 14px rgba(4, 30, 66, 0.05);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
         transition: transform 0.2s ease;
-        height: auto !important; /* Biarkan tinggi menyesuaikan teks */
+        height: auto !important;
         overflow: visible;
-    }
-    [data-testid="stMetric"]:hover {
+    }}
+    [data-testid="stMetric"]:hover {{
         transform: translateY(-2px);
         border-top-color: #FFC220;
-    }
-    [data-testid="stMetricLabel"] {
+    }}
+    [data-testid="stMetricLabel"] {{
         font-family: 'Poppins', sans-serif !important;
-        color: #4A5568 !important;
+        color: var(--text-muted) !important;
         font-size: 0.75rem !important;
         font-weight: 700 !important;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        white-space: normal !important; /* Teks turun ke bawah jika panjang */
+        white-space: normal !important;
         line-height: 1.3 !important;
         word-wrap: break-word !important;
-    }
-    [data-testid="stMetricValue"] {
+    }}
+    [data-testid="stMetricValue"] {{
         font-family: 'Poppins', sans-serif !important;
         color: #0071CE !important;
         font-size: 1.6rem !important;
         font-weight: 800 !important;
         white-space: nowrap !important;
-    }
+    }}
 
     /* ============================== SIDEBAR ============================= */
-    [data-testid="stSidebar"] {
-        background: #FFFFFF;
-        border-right: 1px solid #E6ECF3;
-        box-shadow: 2px 0 12px rgba(4, 30, 66, 0.03);
-    }
-    [data-testid="stSidebar"] h2 {
+    [data-testid="stSidebar"] {{
+        background: var(--bg-card);
+        border-right: 1px solid var(--border-color);
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.03);
+    }}
+    [data-testid="stSidebar"] h2 {{
         color: #0071CE !important;
         font-size: 1.2rem !important;
         border-bottom: 3px solid #FFC220;
         display: inline-block;
         padding-bottom: 0.4rem;
         margin-bottom: 1rem;
-    }
+    }}
     
     /* Perbaikan Expander */
-    [data-testid="stExpander"] {
-        border: 1px solid #E6ECF3 !important;
+    [data-testid="stExpander"] {{
+        border: 1px solid var(--border-color) !important;
         border-radius: 12px !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
-        background: #FFFFFF !important;
-    }
-    [data-testid="stExpander"] summary {
-        background: #F8FAFD !important;
+        background: var(--bg-card) !important;
+    }}
+    [data-testid="stExpander"] summary {{
+        background: rgba(0, 113, 206, 0.05) !important;
         color: #0071CE !important;
         font-weight: 600 !important;
         padding: 0.8rem 1rem !important;
         border-radius: 12px !important;
-    }
+    }}
 
-    /* Perbaikan Multiselect Tag (Warna Biru Walmart) */
-    [data-baseweb="tag"] {
+    /* Multiselect Tag */
+    [data-baseweb="tag"] {{
         background-color: #0071CE !important;
         border: none !important;
         border-radius: 6px !important;
-    }
-    [data-baseweb="tag"] span {
+    }}
+    [data-baseweb="tag"] span {{
         color: #FFFFFF !important;
         font-family: 'Inter', sans-serif !important;
-    }
-    [data-baseweb="tag"] svg {
+    }}
+    [data-baseweb="tag"] svg {{
         fill: #FFFFFF !important;
-    }
+    }}
 
     /* ============================== TABS ================================ */
-    .stTabs [data-baseweb="tab-list"] {
+    .stTabs [data-baseweb="tab-list"] {{
         gap: 8px;
         background: transparent !important;
-        border-bottom: 2px solid #E6ECF3;
+        border-bottom: 2px solid var(--border-color);
         padding-bottom: 0px;
         margin-bottom: 1.5rem;
-    }
-    .stTabs [data-baseweb="tab"] {
+    }}
+    .stTabs [data-baseweb="tab"] {{
         background: transparent !important;
         border: none !important;
         border-radius: 8px 8px 0 0 !important;
@@ -323,48 +390,50 @@ st.markdown(
         font-family: 'Poppins', sans-serif !important;
         font-size: 0.9rem !important;
         font-weight: 600 !important;
-        color: #64748B !important;
+        color: var(--text-muted) !important;
         transition: all 0.2s ease;
-    }
-    .stTabs [data-baseweb="tab"]:hover {
+    }}
+    .stTabs [data-baseweb="tab"]:hover {{
         color: #0071CE !important;
-        background: #F8FAFD !important;
-    }
-    .stTabs [aria-selected="true"] {
-        background: #EAF4FC !important;
+        background: rgba(0, 113, 206, 0.05) !important;
+    }}
+    .stTabs [aria-selected="true"] {{
+        background: rgba(0, 113, 206, 0.1) !important;
         color: #0071CE !important;
         border-bottom: 3px solid #0071CE !important;
-    }
-    .stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] {
+    }}
+    .stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] {{
         display: none !important;
-    }
+    }}
 
     /* ============================== COMPONENT WRAPPERS ================== */
-    [data-testid="stVerticalBlockBorderWrapper"] {
-        background: #FFFFFF;
-        border: 1px solid #E6ECF3 !important;
+    [data-testid="stVerticalBlockBorderWrapper"] {{
+        background: var(--bg-card);
+        border: 1px solid var(--border-color) !important;
         border-radius: 12px !important;
         padding: 1rem !important;
-        box-shadow: 0 4px 14px rgba(4, 30, 66, 0.04);
-    }
-    [data-testid="stPlotlyChart"], [data-testid="stDataFrame"] {
-        background: #FFFFFF;
-        border: 1px solid #E6ECF3;
-        border-radius: 12px;
-        padding: 8px;
-        box-shadow: 0 3px 12px rgba(4, 30, 66, 0.04);
-    }
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    }}
+    
+    /* Style untuk Elemen Input & Selectbox agar sesuai tema */
+    .stSelectbox div[data-baseweb="select"] > div,
+    .stMultiSelect div[data-baseweb="select"] > div,
+    .stTextInput input {{
+        background-color: var(--bg-main) !important;
+        color: var(--text-main) !important;
+        border-color: var(--border-color) !important;
+    }}
 
     /* ============================== SCROLLBAR & MISC ==================== */
-    hr {
-        border-top: 1px dashed #CBD5E0 !important;
+    hr {{
+        border-top: 1px dashed var(--border-color) !important;
         margin: 1.5rem 0 !important;
-    }
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #F1F5F9; }
-    ::-webkit-scrollbar-thumb { background: #78B9E7; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #0071CE; }
-    #MainMenu, footer { visibility: hidden; }
+    }}
+    ::-webkit-scrollbar {{ width: 8px; }}
+    ::-webkit-scrollbar-track {{ background: var(--bg-main); }}
+    ::-webkit-scrollbar-thumb {{ background: #78B9E7; border-radius: 4px; }}
+    ::-webkit-scrollbar-thumb:hover {{ background: #0071CE; }}
+    #MainMenu, footer {{ visibility: hidden; }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -409,37 +478,46 @@ st.markdown(
 # HELPER TAMPILAN
 # ----------------------------------------------------------------------------
 def show(fig, height=420):
-    # Perbaikan: Margin atas diperbesar agar Judul dan Legenda tidak bertabrakan
+    # Konfigurasi dinamis untuk Plotly berdasarkan Dark/Light mode
+    bg_color = BG_CARD if is_dark else "white"
+    grid_color = "#334155" if is_dark else "#EEF2F7"
+    line_color = "#475569" if is_dark else "#CBD5E0"
+    text_color = "#F8FAFC" if is_dark else "#2E2F32"
+    tick_color = "#94A3B8" if is_dark else "#4A5568"
+
     fig.update_layout(
-        template="plotly_white",
+        template="plotly_dark" if is_dark else "plotly_white",
         height=height,
-        margin=dict(l=10, r=10, t=80, b=10), # t=80 memberi ruang vertikal
+        margin=dict(l=10, r=10, t=80, b=10),
         legend=dict(
             orientation="h", 
             yanchor="bottom", 
             y=1.02, 
             x=0,
-            bgcolor="rgba(255,255,255,0.9)",
-            bordercolor="#E6ECF3", 
-            borderwidth=1
+            bgcolor="rgba(30, 41, 59, 0.8)" if is_dark else "rgba(255,255,255,0.9)",
+            bordercolor=grid_color, 
+            borderwidth=1,
+            font=dict(color=text_color)
         ),
-        font=dict(family="Inter, sans-serif", size=12, color="#2E2F32"),
+        font=dict(family="Inter, sans-serif", size=12, color=text_color),
         title=dict(
-            font=dict(family="Poppins, sans-serif", size=14, color="#041E42", weight="bold"),
-            y=0.98, # Posisi judul sedikit di bawah margin atas
+            font=dict(family="Poppins, sans-serif", size=14, color=text_color, weight="bold"),
+            y=0.98,
             x=0,
             xanchor='left',
             yanchor='top'
         ),
-        plot_bgcolor="white",
-        paper_bgcolor="white",
+        plot_bgcolor=bg_color,
+        paper_bgcolor=bg_color,
     )
-    fig.update_xaxes(gridcolor="#EEF2F7", linecolor="#CBD5E0",
-                     zerolinecolor="#E2E8F0",
-                     tickfont=dict(family="Inter, sans-serif", color="#4A5568", size=11))
-    fig.update_yaxes(gridcolor="#EEF2F7", linecolor="#CBD5E0",
-                     zerolinecolor="#E2E8F0",
-                     tickfont=dict(family="Inter, sans-serif", color="#4A5568", size=11))
+    fig.update_xaxes(
+        gridcolor=grid_color, linecolor=line_color, zerolinecolor=grid_color,
+        tickfont=dict(family="Inter, sans-serif", color=tick_color, size=11)
+    )
+    fig.update_yaxes(
+        gridcolor=grid_color, linecolor=line_color, zerolinecolor=grid_color,
+        tickfont=dict(family="Inter, sans-serif", color=tick_color, size=11)
+    )
     try:
         st.plotly_chart(fig, width="stretch")
     except Exception:
@@ -862,10 +940,25 @@ def simulate(df, uplift_peak, recovery):
 # SIDEBAR
 # ----------------------------------------------------------------------------
 st.sidebar.markdown("## 🛒 Panel Pengaturan")
+
+# Toggle Mode Terang / Gelap
+st.sidebar.markdown("---")
+tema_pilihan = st.sidebar.toggle(
+    "🌙 Mode Gelap (Dark Mode)", 
+    value=(st.session_state.theme == "Dark"),
+    help="Aktifkan untuk tampilan malam hari"
+)
+if tema_pilihan and st.session_state.theme != "Dark":
+    st.session_state.theme = "Dark"
+    st.rerun()
+elif not tema_pilihan and st.session_state.theme != "Light":
+    st.session_state.theme = "Light"
+    st.rerun()
+st.sidebar.markdown("---")
+
 st.sidebar.caption("Pilih berkas data serta filter periode dan toko yang ingin dianalisis.")
 
 with st.sidebar:
-    # Perbaikan: Layout rapi untuk file uploader dan expander
     with st.expander("📂 Sumber Data", expanded=True):
         uploaded = st.file_uploader("Unggah berkas CSV (opsional)", type="csv")
         st.caption(f"Jika tidak diunggah, sistem membaca `{DEFAULT_FILE}` dari folder aplikasi.")
@@ -903,7 +996,7 @@ if df.empty:
 st.sidebar.markdown("---")
 st.sidebar.caption(f"🛒 **Data aktif:** {len(df):,} baris · "
                    f"{df.Store.nunique()} toko · {df.Year.nunique()} tahun")
-st.sidebar.caption("Save Money. Live Better. · Walmart BI v2.2")
+st.sidebar.caption("Save Money. Live Better. · Walmart BI v2.3")
 
 # ----------------------------------------------------------------------------
 # TAB
@@ -940,11 +1033,11 @@ with tab1:
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=w.Date, y=w.Total, mode="lines", name="Total penjualan jaringan",
                              line=dict(color=WALMART_BLUE, width=3),
-                             fill="tozeroy", fillcolor="rgba(0, 113, 206, 0.08)"))
+                             fill="tozeroy", fillcolor="rgba(0, 113, 206, 0.15)" if is_dark else "rgba(0, 113, 206, 0.08)"))
     hol = w[w.Holiday == 1]
     fig.add_trace(go.Scatter(x=hol.Date, y=hol.Total, mode="markers", name="Pekan libur (flag)",
                              marker=dict(color=WALMART_YELLOW, size=13,
-                                         line=dict(color=WALMART_DARK, width=2),
+                                         line=dict(color=WALMART_DARK, width=2) if not is_dark else dict(color="#FFFFFF", width=2),
                                          symbol="circle")))
     fig.update_layout(title="Tren Penjualan Mingguan (Total Semua Toko Terpilih)",
                       yaxis_title="USD", xaxis_title="Tanggal")
@@ -1010,7 +1103,7 @@ with tab2:
                 marker_color=[CLASS_COLOR[k] for k in ss.Kelas])
     fig.add_trace(go.Scatter(x=ss.Store.astype(int).astype(str), y=ss.CumShare * 100,
                              name="Kumulatif (%)", yaxis="y2", mode="lines+markers",
-                             line=dict(color=WALMART_DARK, width=3),
+                             line=dict(color="#FFFFFF" if is_dark else WALMART_DARK, width=3),
                              marker=dict(size=7)))
     fig.update_layout(title="Diagram Pareto Penjualan per Toko (biru = A, kuning = B, abu = C)",
                       xaxis=dict(type="category", title="Toko"),
@@ -1132,7 +1225,7 @@ with tab3:
     fig = px.line(w.sort_values("Week"), x="Week", y="Total", color="Tahun",
                   title="Total Penjualan per Pekan ke-n dalam Tahun",
                   color_discrete_sequence=[WALMART_BLUE, WALMART_YELLOW,
-                                            WALMART_DARK, WALMART_RED])
+                                            "#FFFFFF" if is_dark else WALMART_DARK, WALMART_RED])
     show(fig, 380)
 
     divider()
@@ -1146,7 +1239,7 @@ with tab3:
                      title="Rata-rata Dampak Pekan Libur vs Pekan Non-Libur (%)",
                      color_discrete_sequence=[WALMART_BLUE], text="Lift")
         fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside",
-                          textfont=dict(color=WALMART_DARK, family="Poppins"))
+                          textfont=dict(color=TEXT_MAIN, family="Poppins"))
         show(fig, 380)
 
         t = hs.copy()
@@ -1361,3 +1454,4 @@ with tab5:
         "Rekomendasi ini bersifat indikatif dan sebaiknya dilengkapi dengan data biaya, "
         "margin, dan konteks operasional sebelum diimplementasikan secara penuh."
     )
+```
