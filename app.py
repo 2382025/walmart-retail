@@ -1,27 +1,6 @@
-"""
-Walmart Business Intelligence - Decision Support Dashboard
-===========================================================
-Dashboard pendukung pengambilan keputusan berbasis data penjualan mingguan Walmart.
-
-Cara menjalankan:
-    streamlit run app.py
-
-Berkas data:
-    Walmart_Cleaned.csv (letakkan satu folder dengan app.py) atau unggah melalui sidebar.
-
-Susunan aplikasi:
-    1. Ringkasan Eksekutif   - KPI dan tren penjualan
-    2. Analisis Toko         - Pareto/ABC, pertumbuhan, volatilitas
-    3. Musiman & Hari Libur  - indeks bulanan, dampak hari libur, pekan puncak
-    4. Faktor Eksternal      - suhu, BBM, CPI, pengangguran
-    5. Pusat Keputusan       - rekomendasi keputusan berbasis data + simulasi what-if
-
-Tema UI   : Walmart Brand (Spark Blue + Sun Yellow) dengan Dukungan Dark/Light Mode
-Disusun oleh : Kelompok 2
-Mata Kuliah  : Business Intelligence / Analitik Data
-"""
-
 import os
+import re
+import textwrap
 
 import numpy as np
 import pandas as pd
@@ -38,13 +17,72 @@ st.set_page_config(
     layout="wide",
 )
 
-# ----------------------------------------------------------------------------
-# STATE MANAGEMENT UNTUK TEMA
-# ----------------------------------------------------------------------------
-if "theme" not in st.session_state:
-    st.session_state.theme = "Light"
 
-is_dark = st.session_state.theme == "Dark"
+# ----------------------------------------------------------------------------
+# MODE TAMPILAN: TERANG / GELAP
+# ----------------------------------------------------------------------------
+def _sync_theme_query():
+    """Simpan pilihan mode pada URL (?theme=dark) agar bertahan saat halaman dimuat ulang."""
+    try:
+        if st.session_state.get("dark_mode"):
+            st.query_params["theme"] = "dark"
+        elif "theme" in st.query_params:
+            del st.query_params["theme"]
+    except Exception:
+        pass
+
+
+# Nilai awal diambil dari URL; setelahnya dikendalikan oleh tombol toggle (key="dark_mode").
+# Status dibaca SEBELUM CSS dibuat, sehingga seluruh halaman langsung memakai mode yang dipilih.
+if "dark_mode" not in st.session_state:
+    try:
+        st.session_state["dark_mode"] = st.query_params.get("theme") == "dark"
+    except Exception:
+        st.session_state["dark_mode"] = False
+DARK_MODE = bool(st.session_state["dark_mode"])
+
+# Palet antarmuka (diubah menjadi CSS variable --nama-warna)
+PALETTE_LIGHT = dict(
+    bg1="#F8FAFD", bg2="#F1F6FB", glow1="#EAF4FC", glow2="#FFF5D6",
+    sidebar_bg="#FFFFFF", surface="#FFFFFF", surface_2="#F8FAFD", input_bg="#FFFFFF",
+    border="#E6ECF3", border_strong="#CBD5E0",
+    text="#2E2F32", muted="#4A5568", subtle="#64748B",
+    heading="#041E42", accent_text="#0071CE", accent_fill="#0071CE",
+    shadow="rgba(4, 30, 66, 0.05)", header_bg="rgba(255, 255, 255, 0.85)", hero_border="transparent",
+    interp_bg1="#EAF4FC", interp_bg2="#F5FAFE", interp_text="#1A2B4A", interp_title="#0065BA",
+    note_bg1="#FFF8E1", note_bg2="#FFF3C4", note_text="#5C4400", note_title="#8A5A00",
+    tab_text="#64748B", tab_hover_bg="#F8FAFD", tab_active_bg="#EAF4FC", tab_active_text="#0065BA",
+    scroll_track="#F1F5F9", scroll_thumb="#78B9E7", hr="#CBD5E0",
+)
+PALETTE_DARK = dict(
+    bg1="#0A1424", bg2="#0D1B2F", glow1="rgba(0, 113, 206, 0.22)", glow2="rgba(255, 194, 32, 0.07)",
+    sidebar_bg="#0E1B30", surface="#13243D", surface_2="#182D4A", input_bg="#182D4A",
+    border="#243D5E", border_strong="#3A5A85",
+    text="#E3EBF6", muted="#A8B8CE", subtle="#8FA3BD",
+    heading="#FFFFFF", accent_text="#78B9E7", accent_fill="#0071CE",
+    shadow="rgba(0, 0, 0, 0.35)", header_bg="rgba(10, 20, 36, 0.85)", hero_border="rgba(255, 255, 255, 0.10)",
+    interp_bg1="rgba(0, 113, 206, 0.22)", interp_bg2="rgba(0, 113, 206, 0.09)",
+    interp_text="#DCE9F8", interp_title="#8CC4F0",
+    note_bg1="rgba(255, 194, 32, 0.17)", note_bg2="rgba(255, 194, 32, 0.08)",
+    note_text="#F6E7B4", note_title="#FFC220",
+    tab_text="#9FB3CC", tab_hover_bg="#182D4A", tab_active_bg="rgba(0, 113, 206, 0.30)", tab_active_text="#FFFFFF",
+    scroll_track="#0D1B2F", scroll_thumb="#3A5A85", hr="#3A5A85",
+)
+
+# Palet grafik Plotly (grafik tidak membaca CSS, sehingga perlu diatur terpisah)
+PLOT_LIGHT = dict(
+    template="plotly_white", paper="#FFFFFF", text="#2E2F32", heading="#041E42", tick="#4A5568",
+    grid="#EEF2F7", axis="#CBD5E0", zero="#E2E8F0", legend_bg="rgba(255, 255, 255, 0.92)",
+    legend_border="#E6ECF3", hover_bg="#FFFFFF", hover_border="#CBD5E0", accent="#0071CE",
+    chart_blue="#0071CE", ink="#041E42", fill_blue="rgba(0, 113, 206, 0.08)",
+)
+PLOT_DARK = dict(
+    template="plotly_dark", paper="#13243D", text="#E3EBF6", heading="#FFFFFF", tick="#A8B8CE",
+    grid="#223A5C", axis="#3A5A85", zero="#3A5A85", legend_bg="rgba(19, 36, 61, 0.92)",
+    legend_border="#243D5E", hover_bg="#182D4A", hover_border="#3A5A85", accent="#78B9E7",
+    chart_blue="#3B9CF2", ink="#E3EBF6", fill_blue="rgba(59, 156, 242, 0.18)",
+)
+PLOT = PLOT_DARK if DARK_MODE else PLOT_LIGHT
 
 # Palet warna resmi Walmart
 WALMART_BLUE   = "#0071CE"
@@ -58,7 +96,13 @@ WALMART_GREY   = "#9AA5B1"
 
 BLUE, YELLOW, DARK = WALMART_BLUE, WALMART_YELLOW, WALMART_DARK
 RED, GREEN, GREY = WALMART_RED, WALMART_GREEN, WALMART_GREY
-CLASS_COLOR = {"A": WALMART_BLUE, "B": WALMART_YELLOW, "C": WALMART_GREY}
+
+# Warna yang dipakai pada grafik mengikuti mode tampilan:
+#   CHART_BLUE : biru Walmart (lebih terang pada mode gelap agar tetap kontras)
+#   INK        : warna "tinta" untuk garis/teks yang di mode terang berwarna biru tua
+#   FILL_BLUE  : warna isian area di bawah garis tren
+CHART_BLUE, INK, FILL_BLUE = PLOT["chart_blue"], PLOT["ink"], PLOT["fill_blue"]
+CLASS_COLOR = {"A": CHART_BLUE, "B": WALMART_YELLOW, "C": WALMART_GREY}
 
 MONTH_ID = {1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr", 5: "Mei", 6: "Jun",
             7: "Jul", 8: "Agu", 9: "Sep", 10: "Okt", 11: "Nov", 12: "Des"}
@@ -70,368 +114,434 @@ DEFAULT_FILE = "Walmart_Cleaned.csv"
 
 
 # ----------------------------------------------------------------------------
-# DEFINISI VARIABEL WARNA BERDASARKAN TEMA
+# GAYA VISUAL — WALMART EDITION (TERANG & GELAP)
 # ----------------------------------------------------------------------------
-if is_dark:
-    BG_MAIN = "#0F172A"         # Slate 900
-    BG_CARD = "#1E293B"         # Slate 800
-    TEXT_MAIN = "#F8FAFC"       # Slate 50
-    TEXT_MUTED = "#94A3B8"      # Slate 400
-    BORDER = "#334155"          # Slate 700
-    HEADER_BG = "rgba(15, 23, 42, 0.85)"
-    
-    # Interpretasi & Catatan Dark Mode
-    INTERP_BG = "#1E3A8A"       # Blue 900
-    INTERP_TEXT = "#DBEAFE"     # Blue 100
-    INTERP_BORDER = "#3B82F6"   # Blue 500
-    
-    NOTE_BG = "#422006"         # Yellow 900
-    NOTE_TEXT = "#FEF08A"       # Yellow 200
-    NOTE_BORDER = "#EAB308"     # Yellow 500
-else:
-    BG_MAIN = "#F8FAFD"
-    BG_CARD = "#FFFFFF"
-    TEXT_MAIN = "#2E2F32"
-    TEXT_MUTED = "#64748B"
-    BORDER = "#E6ECF3"
-    HEADER_BG = "rgba(255, 255, 255, 0.85)"
-    
-    # Interpretasi & Catatan Light Mode
-    INTERP_BG = "#EAF4FC"
-    INTERP_TEXT = "#1A2B4A"
-    INTERP_BORDER = "#0071CE"
-    
-    NOTE_BG = "#FFF8E1"
-    NOTE_TEXT = "#5C4400"
-    NOTE_BORDER = "#FFC220"
+# CSS dasar: semua warna memakai variable (var(--...)), sehingga satu set aturan
+# berlaku untuk kedua mode. Tidak ada warna yang di-hardcode pada komponen kustom.
+BASE_CSS = r"""
+/* ============================== TIPOGRAFI =========================== */
+html, body, [class*="css"] { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+p, li, .stMarkdown, label, .stText { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; }
+[data-testid="stIconMaterial"], .material-icons, .material-symbols-rounded { font-family: 'Material Symbols Rounded', 'Material Icons' !important; }
+
+/* ============================== LATAR & TATA LETAK ================== */
+.stApp {
+    background:
+        radial-gradient(circle at 0% 0%, var(--glow1) 0%, transparent 45%),
+        radial-gradient(circle at 100% 100%, var(--glow2) 0%, transparent 45%),
+        linear-gradient(180deg, var(--bg1) 0%, var(--bg2) 100%);
+    background-attachment: fixed;
+}
+[data-testid="stAppViewContainer"], [data-testid="stMain"] { background: transparent !important; }
+[data-testid="stHeader"] {
+    background: var(--header-bg) !important;
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+}
+.stApp [data-testid="stHeader"] button, .stApp [data-testid="stHeader"] a, .stApp [data-testid="stToolbar"] * { color: var(--muted) !important; }
+[data-testid="stHeaderActionElements"] { display: none !important; }
+/* Ruang atas cukup agar konten tidak tertutup header tetap */
+[data-testid="stMainBlockContainer"], .block-container {
+    padding-top: 4.5rem !important;
+    padding-bottom: 3rem !important;
+    max-width: 1400px;
+}
+
+/* Tombol toggle mode: rata kanan, tidak terpotong */
+.st-key-dark_mode { display: flex; justify-content: flex-end; margin-bottom: -0.2rem; }
+.st-key-dark_mode label { margin: 0; }
+.st-key-dark_mode p { font-weight: 600; white-space: nowrap; font-size: 0.92rem; }
+
+/* ============================== HEADINGS ============================ */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif !important;
+    color: var(--heading) !important;
+    line-height: 1.3 !important;
+    overflow-wrap: anywhere;
+}
+h3 {
+    font-weight: 700 !important;
+    font-size: 1.3rem !important;
+    margin: 1.2rem 0 0.9rem 0 !important;
+    padding-bottom: 0.45rem !important;
+    border-bottom: 3px solid #FFC220;
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+}
+h4 {
+    font-weight: 700 !important;
+    font-size: 1.08rem !important;
+    color: var(--accent-text) !important;
+    margin-top: 1.1rem !important;
+}
+
+/* ============================== HERO ================================= */
+.hero {
+    background: linear-gradient(135deg, #0057A8 0%, #043A74 55%, #041E42 100%);
+    border: 1px solid var(--hero-border);
+    border-radius: 20px;
+    padding: 2rem 2.4rem 2.2rem 2.4rem;
+    color: white;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 12px 30px rgba(0, 113, 206, 0.25);
+    position: relative;
+    overflow: hidden;
+}
+.hero::before {
+    content: '';
+    position: absolute;
+    top: -120px; right: -80px;
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(255,194,32,0.22) 0%, transparent 65%);
+    pointer-events: none;
+}
+.hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #FFC220 0%, #FFA000 100%);
+}
+.hero-inner { display: flex; align-items: center; gap: 1.6rem; position: relative; z-index: 1; }
+.hero-spark { flex-shrink: 0; filter: drop-shadow(0 6px 16px rgba(255,194,32,0.55)); }
+.hero-text { min-width: 0; }
+.hero .hero-text h1 {
+    color: #FFFFFF !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 1.7rem !important;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.hero .hero-text p { color: #E8F2FC !important; margin: 0.5rem 0 0 0 !important; font-size: 1rem !important; }
+.hero .hero-text .slogan {
+    color: #FFC220 !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-weight: 700 !important;
+    font-style: italic;
+    font-size: 0.95rem !important;
+    margin-top: 0.7rem !important;
+}
+.hero .hero-text .meta { color: #C4DBF0 !important; font-size: 0.85rem !important; margin-top: 0.5rem !important; line-height: 1.5; }
+
+/* ============================== INTERPRETASI & CATATAN ============== */
+.interp {
+    background: linear-gradient(135deg, var(--interp-bg1) 0%, var(--interp-bg2) 100%);
+    border-left: 5px solid #0071CE;
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    margin: 1rem 0;
+    color: var(--interp-text) !important;
+    box-shadow: 0 3px 12px var(--shadow);
+    line-height: 1.6;
+}
+.interp > b:first-child {
+    color: var(--interp-title) !important;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 0.4rem;
+}
+.note {
+    background: linear-gradient(135deg, var(--note-bg1) 0%, var(--note-bg2) 100%);
+    border-left: 5px solid #FFC220;
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    margin: 1rem 0;
+    color: var(--note-text) !important;
+    box-shadow: 0 3px 12px var(--shadow);
+    line-height: 1.6;
+}
+.note b {
+    color: var(--note-title) !important;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+/* ============================== METRICS (KPI) ======================= */
+[data-testid="stMetric"] {
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 1.05rem 1.2rem;
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--accent-fill);
+    box-shadow: 0 4px 14px var(--shadow);
+    transition: transform 0.2s ease, border-top-color 0.2s ease;
+    box-sizing: border-box;
+    min-height: 7.6rem;          /* kartu KPI dalam satu baris tetap sejajar */
+    height: auto !important;
+    overflow: visible;
+}
+[data-testid="stMetric"]:hover { transform: translateY(-2px); border-top-color: #FFC220; }
+.stApp [data-testid="stMetricLabel"], .stApp [data-testid="stMetricLabel"] * {
+    font-family: 'Poppins', sans-serif !important;
+    color: var(--muted) !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: normal !important;
+    line-height: 1.3 !important;
+    overflow-wrap: anywhere;
+}
+.stApp [data-testid="stMetricValue"], .stApp [data-testid="stMetricValue"] * {
+    font-family: 'Poppins', sans-serif !important;
+    color: var(--accent-text) !important;
+    font-size: clamp(1.25rem, 1rem + 0.7vw, 1.6rem) !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+    line-height: 1.25 !important;
+}
+/* Delta pada dashboard ini hanya dipakai sebagai keterangan (delta_color="off") */
+.stApp [data-testid="stMetricDelta"], .stApp [data-testid="stMetricDelta"] * {
+    color: var(--muted) !important;
+    font-size: 0.8rem !important;
+    white-space: normal !important;
+}
+
+/* ============================== SIDEBAR ============================= */
+[data-testid="stSidebar"] {
+    background: var(--sidebar-bg) !important;
+    border-right: 1px solid var(--border);
+    box-shadow: 2px 0 12px var(--shadow);
+}
+[data-testid="stSidebar"] h2 {
+    color: var(--accent-text) !important;
+    font-size: 1.2rem !important;
+    border-bottom: 3px solid #FFC220;
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.9rem;
+}
+/* Pilihan toko banyak (45): batasi tinggi kotak agar sidebar tidak memanjang */
+[data-testid="stSidebar"] [data-baseweb="select"] > div:first-child { max-height: 9.5rem; overflow-y: auto; }
+
+/* ============================== EXPANDER ============================ */
+[data-testid="stExpander"] { background: transparent !important; border: none !important; box-shadow: none !important; }
+[data-testid="stExpander"] details {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 10px var(--shadow);
+    overflow: hidden;
+}
+[data-testid="stExpander"] summary {
+    background: var(--surface-2) !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 12px !important;
+}
+[data-testid="stExpander"] details[open] > summary {
+    border-bottom: 1px solid var(--border);
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+.stApp [data-testid="stExpander"] summary, .stApp [data-testid="stExpander"] summary * {
+    color: var(--accent-text) !important;
+    font-weight: 600 !important;
+}
+
+/* ============================== MULTISELECT TAG ===================== */
+[data-baseweb="tag"] { background-color: #0071CE !important; border: none !important; border-radius: 6px !important; }
+.stApp [data-baseweb="tag"] span, .stApp [data-baseweb="tag"] svg { color: #FFFFFF !important; fill: #FFFFFF !important; font-family: 'Inter', sans-serif !important; }
+
+/* ============================== TABS ================================ */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 6px;
+    background: transparent !important;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 1.4rem;
+    overflow-x: auto;               /* di layar sempit tab dapat digeser, tidak saling menumpuk */
+    flex-wrap: nowrap;
+    scrollbar-width: thin;
+}
+.stTabs [data-baseweb="tab"] {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 8px 8px 0 0 !important;
+    padding: 10px 18px !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    color: var(--tab-text) !important;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+.stApp .stTabs [data-baseweb="tab"] p, .stApp .stTabs [data-baseweb="tab"] * { color: inherit !important; font-family: inherit !important; font-weight: inherit !important; }
+.stTabs [data-baseweb="tab"]:hover { color: var(--accent-text) !important; background: var(--tab-hover-bg) !important; }
+.stTabs [aria-selected="true"] {
+    background: var(--tab-active-bg) !important;
+    color: var(--tab-active-text) !important;
+    border-bottom: 3px solid var(--accent-text) !important;
+}
+.stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] { display: none !important; }
+
+/* ============================== WRAPPER KOMPONEN ==================== */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: var(--surface);
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    padding: 1rem !important;
+    box-shadow: 0 4px 14px var(--shadow);
+}
+[data-testid="stPlotlyChart"], [data-testid="stDataFrame"] {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 3px 12px var(--shadow);
+    overflow: hidden;
+}
+.stApp [data-testid="stCaptionContainer"], .stApp [data-testid="stCaptionContainer"] * { color: var(--muted) !important; }
+
+/* ============================== TOMBOL UNDUH ======================== */
+[data-testid="stDownloadButton"] button {
+    background: #0071CE !important;
+    border: 1px solid #0071CE !important;
+    border-radius: 10px !important;
+    padding: 0.55rem 1.1rem !important;
+    transition: background 0.2s ease;
+}
+.stApp [data-testid="stDownloadButton"] button, .stApp [data-testid="stDownloadButton"] button * { color: #FFFFFF !important; font-weight: 600 !important; }
+[data-testid="stDownloadButton"] button:hover { background: #0057A8 !important; border-color: #0057A8 !important; }
+
+/* ============================== SCROLLBAR & LAIN-LAIN =============== */
+hr { border-top: 1px dashed var(--hr) !important; margin: 1.5rem 0 !important; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--scroll-track); }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #0071CE; }
+#MainMenu, footer { visibility: hidden; }
+
+/* ============================== RESPONSIF =========================== */
+@media (max-width: 768px) {
+    [data-testid="stMainBlockContainer"], .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+    .hero { padding: 1.3rem 1.2rem 1.5rem 1.2rem; border-radius: 16px; }
+    .hero-inner { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .hero-spark { width: 48px; height: 48px; }
+    .hero .hero-text h1 { font-size: 1.35rem !important; }
+    .stTabs [data-baseweb="tab"] { padding: 8px 12px !important; font-size: 0.82rem !important; }
+    .st-key-dark_mode { justify-content: flex-start; }
+}
+"""
+
+# Tambahan khusus mode gelap: menimpa warna bawaan Streamlit (tema dasar terang)
+# untuk widget bawaan seperti input, dropdown, slider, uploader, tabel, dan tooltip.
+DARK_EXTRA_CSS = r"""
+/* ---------- Teks umum ---------- */
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stSidebar"] { color: var(--text) !important; }
+[data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li,
+[data-testid="stMarkdownContainer"] ol, [data-testid="stMarkdownContainer"] ul,
+[data-testid="stMarkdownContainer"] strong { color: var(--text) !important; }
+[data-testid="stMarkdownContainer"] code { background: rgba(255,255,255,0.08) !important; color: #FFC220 !important; }
+.stApp label, .stApp [data-testid="stWidgetLabel"], .stApp [data-testid="stWidgetLabel"] * { color: var(--text) !important; }
+.stApp .hero .hero-text p { color: #E8F2FC !important; }
+.stApp .hero .hero-text .slogan { color: #FFC220 !important; }
+.stApp .hero .hero-text .meta { color: #C4DBF0 !important; }
+
+/* ---------- Input, select, multiselect ---------- */
+[data-baseweb="select"] > div, [data-baseweb="input"] > div, [data-baseweb="base-input"], textarea {
+    background-color: var(--input-bg) !important;
+    border-color: var(--border-strong) !important;
+}
+.stApp [data-baseweb="select"] input, .stApp [data-baseweb="base-input"] input, .stApp [data-baseweb="select"] > div {
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text);
+}
+.stApp [data-baseweb="select"] svg { fill: var(--muted) !important; }
+.stApp [data-baseweb="tag"] svg { fill: #FFFFFF !important; }
+::placeholder { color: var(--subtle) !important; opacity: 1; }
+
+/* ---------- Dropdown & tooltip (dirender di luar kontainer utama) ---------- */
+[data-baseweb="popover"] > div, [data-baseweb="popover"] [data-baseweb="menu"], [data-baseweb="popover"] ul {
+    background: var(--surface-2) !important;
+    color: var(--text) !important;
+    border-color: var(--border-strong) !important;
+}
+[data-baseweb="popover"] li, [data-baseweb="popover"] [role="option"] { background: transparent !important; color: var(--text) !important; }
+[data-baseweb="popover"] li:hover, [data-baseweb="popover"] [role="option"]:hover, [data-baseweb="popover"] [aria-selected="true"] {
+    background: rgba(0, 113, 206, 0.32) !important;
+}
+.stApp [data-testid="stTooltipContent"], [data-testid="stTooltipContent"] *, [data-baseweb="popover"] p { color: var(--text) !important; }
+
+/* ---------- Slider ---------- */
+[data-testid="stSliderThumbValue"] { color: var(--accent-text) !important; }
+[data-testid="stSliderTickBarMin"], [data-testid="stSliderTickBarMax"] { color: var(--muted) !important; }
+
+/* ---------- Uploader ---------- */
+[data-testid="stFileUploaderDropzone"] {
+    background: var(--input-bg) !important;
+    border: 1px dashed var(--border-strong) !important;
+    border-radius: 12px !important;
+}
+[data-testid="stFileUploaderDropzone"] *, [data-testid="stFileUploader"] small { color: var(--muted) !important; }
+[data-testid="stFileUploaderDropzone"] svg { fill: var(--muted) !important; }
+[data-testid="stFileUploaderDropzone"] button {
+    background: var(--surface) !important;
+    border: 1px solid var(--border-strong) !important;
+}
+.stApp [data-testid="stFileUploaderDropzone"] button, .stApp [data-testid="stFileUploaderDropzone"] button * { color: var(--text) !important; }
+[data-testid="stFileUploaderFile"] *, [data-testid="stFileUploaderFileName"] { color: var(--text) !important; }
+
+/* ---------- Notifikasi (st.info / st.warning / st.error) ---------- */
+.stApp [data-testid="stAlert"] {
+    background: rgba(0, 113, 206, 0.16) !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: 12px !important;
+}
+.stApp [data-testid="stAlert"] * { color: var(--text) !important; }
+
+/* ---------- Tabel (st.dataframe) ----------
+   Tabel digambar pada <canvas> sehingga tidak bisa diwarnai lewat CSS biasa.
+   Filter invert membalik terang menjadi gelap, hue-rotate memulihkan warna aksen. */
+[data-testid="stDataFrame"] { padding: 0 !important; }
+[data-testid="stDataFrameResizable"] { filter: invert(0.92) hue-rotate(180deg); border-radius: 12px; }
+[data-testid="stDataFrame"]:not(:has([data-testid="stDataFrameResizable"])) canvas { filter: invert(0.92) hue-rotate(180deg); }
+"""
+
+_VAR_ORDER = None
 
 
-# ----------------------------------------------------------------------------
-# GAYA VISUAL — WALMART EDITION (CSS VARIABLES)
-# ----------------------------------------------------------------------------
-st.markdown(
-    f"""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+def build_css(dark: bool) -> str:
+    """Susun CSS lengkap (font + variable warna + aturan dasar + tambahan mode gelap)."""
+    pal = PALETTE_DARK if dark else PALETTE_LIGHT
+    root = ":root{" + "".join(f"--{k.replace('_', '-')}:{v};" for k, v in pal.items())
+    root += "color-scheme:dark;}" if dark else "color-scheme:light;}"
+    css = BASE_CSS + (DARK_EXTRA_CSS if dark else "")
+    css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)       # buang komentar
+    css = re.sub(r"\s+", " ", css).strip()                  # ratakan menjadi satu baris
+    font_url = ("@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800"
+                "&family=Inter:wght@400;500;600;700&display=swap');")
+    return f"<style>{font_url}{root}{css}</style>"
 
-    /* ============================== ROOT VARIABLES ====================== */
-    :root {{
-        --bg-main: {BG_MAIN};
-        --bg-card: {BG_CARD};
-        --text-main: {TEXT_MAIN};
-        --text-muted: {TEXT_MUTED};
-        --border-color: {BORDER};
-        --header-bg: {HEADER_BG};
-    }}
 
-    /* ============================== GLOBAL TYPOGRAPHY =================== */
-    html, body, [class*="css"] {{
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        color: var(--text-main);
-    }}
-    
-    p, li, .stMarkdown, label, .stText {{ 
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; 
-    }}
+st.markdown(build_css(DARK_MODE), unsafe_allow_html=True)
 
-    /* Pastikan ikon Streamlit tetap menggunakan font Material */
-    [data-testid="stIconMaterial"], .material-icons, .material-symbols-rounded {{
-        font-family: 'Material Symbols Rounded', 'Material Icons' !important;
-    }}
 
-    .stApp {{
-        background: var(--bg-main);
-        background-image: 
-            radial-gradient(circle at 0% 0%, rgba(0, 113, 206, 0.05) 0%, transparent 45%),
-            radial-gradient(circle at 100% 100%, rgba(255, 194, 32, 0.05) 0%, transparent 45%);
-        background-attachment: fixed;
-    }}
-
-    [data-testid="stAppViewContainer"], [data-testid="stMain"] {{ 
-        background: transparent !important; 
-    }}
-
-    [data-testid="stHeader"] {{
-        background: var(--header-bg) !important;
-        backdrop-filter: blur(8px);
-        border-bottom: 1px solid var(--border-color);
-    }}
-
-    /* Sembunyikan ikon Copy Link di samping judul */
-    [data-testid="stHeaderActionElements"] {{
-        display: none !important;
-    }}
-
-    /* ============================== HEADINGS ============================ */
-    h1, h2, h3, h4, h5, h6 {{
-        font-family: 'Poppins', sans-serif !important;
-        color: var(--text-main) !important;
-    }}
-    
-    h3 {{
-        font-weight: 700 !important;
-        font-size: 1.3rem !important;
-        margin-top: 1.5rem !important;
-        margin-bottom: 1rem !important;
-        padding-bottom: 0.5rem;
-        border-bottom: 3px solid #FFC220;
-        display: inline-block;
-    }}
-
-    h4 {{
-        font-weight: 700 !important;
-        font-size: 1.1rem !important;
-        color: #0071CE !important; /* Tetap biru agar kontras di kedua mode */
-        margin-top: 1.2rem !important;
-    }}
-
-    /* ============================== HERO ================================= */
-    .hero {{
-        background: linear-gradient(135deg, #0071CE 0%, #0057A8 55%, #041E42 100%);
-        border-radius: 20px;
-        padding: 2rem 2.4rem;
-        color: white;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 12px 30px rgba(0, 113, 206, 0.25);
-        position: relative;
-        overflow: hidden;
-    }}
-    .hero::before {{
-        content: '';
-        position: absolute;
-        top: -120px; right: -80px;
-        width: 420px; height: 420px;
-        background: radial-gradient(circle, rgba(255,194,32,0.22) 0%, transparent 65%);
-        pointer-events: none;
-    }}
-    .hero::after {{
-        content: '';
-        position: absolute;
-        bottom: 0; left: 0; right: 0;
-        height: 6px;
-        background: linear-gradient(90deg, #FFC220 0%, #FFA000 100%);
-    }}
-    .hero-inner {{
-        display: flex;
-        align-items: center;
-        gap: 1.6rem;
-        position: relative;
-        z-index: 1;
-    }}
-    .hero-spark {{
-        flex-shrink: 0;
-        filter: drop-shadow(0 6px 16px rgba(255,194,32,0.55));
-    }}
-    .hero-text h1 {{
-        color: #FFFFFF !important;
-        margin: 0 !important;
-        font-size: 1.7rem !important;
-        text-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }}
-    .hero-text p {{
-        color: #E8F2FC !important;
-        margin: 0.5rem 0 0 0 !important;
-        font-size: 1rem !important;
-    }}
-    .hero-text .slogan {{
-        color: #FFC220 !important;
-        font-family: 'Poppins', sans-serif !important;
-        font-weight: 700 !important;
-        font-style: italic;
-        font-size: 0.95rem !important;
-        margin-top: 0.7rem !important;
-    }}
-    .hero-text .meta {{
-        color: #B8D4EC !important;
-        font-size: 0.85rem !important;
-        margin-top: 0.5rem !important;
-    }}
-
-    /* ============================== INTERPRETASI & CATATAN ============== */
-    .interp {{
-        background: {INTERP_BG};
-        border-left: 5px solid {INTERP_BORDER};
-        border-radius: 12px;
-        padding: 1rem 1.2rem;
-        margin: 1rem 0;
-        color: {INTERP_TEXT};
-        box-shadow: 0 3px 12px rgba(0, 113, 206, 0.06);
-    }}
-    .interp > b:first-child {{
-        color: {INTERP_BORDER};
-        font-family: 'Poppins', sans-serif;
-        font-size: 0.8rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        display: block;
-        margin-bottom: 0.4rem;
-    }}
-    .note {{
-        background: {NOTE_BG};
-        border-left: 5px solid {NOTE_BORDER};
-        border-radius: 12px;
-        padding: 1rem 1.2rem;
-        margin: 1rem 0;
-        color: {NOTE_TEXT};
-        box-shadow: 0 3px 12px rgba(255, 194, 32, 0.15);
-    }}
-    .note b {{
-        color: {NOTE_BORDER};
-        font-family: 'Poppins', sans-serif;
-        font-size: 0.8rem;
-        font-weight: 800;
-        text-transform: uppercase;
-    }}
-
-    /* ============================== METRICS (KPI) ======================= */
-    [data-testid="stMetric"] {{
-        background: var(--bg-card);
-        border-radius: 14px;
-        padding: 1.2rem;
-        border: 1px solid var(--border-color);
-        border-top: 4px solid #0071CE;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
-        transition: transform 0.2s ease;
-        height: auto !important;
-        overflow: visible;
-    }}
-    [data-testid="stMetric"]:hover {{
-        transform: translateY(-2px);
-        border-top-color: #FFC220;
-    }}
-    [data-testid="stMetricLabel"] {{
-        font-family: 'Poppins', sans-serif !important;
-        color: var(--text-muted) !important;
-        font-size: 0.75rem !important;
-        font-weight: 700 !important;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        white-space: normal !important;
-        line-height: 1.3 !important;
-        word-wrap: break-word !important;
-    }}
-    [data-testid="stMetricValue"] {{
-        font-family: 'Poppins', sans-serif !important;
-        color: #0071CE !important;
-        font-size: 1.6rem !important;
-        font-weight: 800 !important;
-        white-space: nowrap !important;
-    }}
-
-    /* ============================== SIDEBAR ============================= */
-    [data-testid="stSidebar"] {{
-        background: var(--bg-card);
-        border-right: 1px solid var(--border-color);
-        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.03);
-    }}
-    [data-testid="stSidebar"] h2 {{
-        color: #0071CE !important;
-        font-size: 1.2rem !important;
-        border-bottom: 3px solid #FFC220;
-        display: inline-block;
-        padding-bottom: 0.4rem;
-        margin-bottom: 1rem;
-    }}
-    
-    /* Perbaikan Expander */
-    [data-testid="stExpander"] {{
-        border: 1px solid var(--border-color) !important;
-        border-radius: 12px !important;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
-        background: var(--bg-card) !important;
-    }}
-    [data-testid="stExpander"] summary {{
-        background: rgba(0, 113, 206, 0.05) !important;
-        color: #0071CE !important;
-        font-weight: 600 !important;
-        padding: 0.8rem 1rem !important;
-        border-radius: 12px !important;
-    }}
-
-    /* Multiselect Tag */
-    [data-baseweb="tag"] {{
-        background-color: #0071CE !important;
-        border: none !important;
-        border-radius: 6px !important;
-    }}
-    [data-baseweb="tag"] span {{
-        color: #FFFFFF !important;
-        font-family: 'Inter', sans-serif !important;
-    }}
-    [data-baseweb="tag"] svg {{
-        fill: #FFFFFF !important;
-    }}
-
-    /* ============================== TABS ================================ */
-    .stTabs [data-baseweb="tab-list"] {{
-        gap: 8px;
-        background: transparent !important;
-        border-bottom: 2px solid var(--border-color);
-        padding-bottom: 0px;
-        margin-bottom: 1.5rem;
-    }}
-    .stTabs [data-baseweb="tab"] {{
-        background: transparent !important;
-        border: none !important;
-        border-radius: 8px 8px 0 0 !important;
-        padding: 10px 20px !important;
-        font-family: 'Poppins', sans-serif !important;
-        font-size: 0.9rem !important;
-        font-weight: 600 !important;
-        color: var(--text-muted) !important;
-        transition: all 0.2s ease;
-    }}
-    .stTabs [data-baseweb="tab"]:hover {{
-        color: #0071CE !important;
-        background: rgba(0, 113, 206, 0.05) !important;
-    }}
-    .stTabs [aria-selected="true"] {{
-        background: rgba(0, 113, 206, 0.1) !important;
-        color: #0071CE !important;
-        border-bottom: 3px solid #0071CE !important;
-    }}
-    .stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] {{
-        display: none !important;
-    }}
-
-    /* ============================== COMPONENT WRAPPERS ================== */
-    [data-testid="stVerticalBlockBorderWrapper"] {{
-        background: var(--bg-card);
-        border: 1px solid var(--border-color) !important;
-        border-radius: 12px !important;
-        padding: 1rem !important;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
-    }}
-    
-    /* Style untuk Elemen Input & Selectbox agar sesuai tema */
-    .stSelectbox div[data-baseweb="select"] > div,
-    .stMultiSelect div[data-baseweb="select"] > div,
-    .stTextInput input {{
-        background-color: var(--bg-main) !important;
-        color: var(--text-main) !important;
-        border-color: var(--border-color) !important;
-    }}
-
-    /* ============================== SCROLLBAR & MISC ==================== */
-    hr {{
-        border-top: 1px dashed var(--border-color) !important;
-        margin: 1.5rem 0 !important;
-    }}
-    ::-webkit-scrollbar {{ width: 8px; }}
-    ::-webkit-scrollbar-track {{ background: var(--bg-main); }}
-    ::-webkit-scrollbar-thumb {{ background: #78B9E7; border-radius: 4px; }}
-    ::-webkit-scrollbar-thumb:hover {{ background: #0071CE; }}
-    #MainMenu, footer {{ visibility: hidden; }}
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
 
 
 # ----------------------------------------------------------------------------
 # HERO — WALMART EDITION
 # ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# TOMBOL MODE TERANG / GELAP (kanan atas, tepat di atas hero)
+# ----------------------------------------------------------------------------
+_bar_left, _bar_right = st.columns([7, 2])
+with _bar_right:
+    (st.toggle if hasattr(st, "toggle") else st.checkbox)(
+        "🌙 Mode gelap",
+        key="dark_mode",
+        on_change=_sync_theme_query,
+        help="Beralih antara tampilan terang dan gelap.",
+    )
+
 st.markdown(
     """
     <div class="hero">
@@ -466,51 +576,66 @@ st.markdown(
 # ----------------------------------------------------------------------------
 # HELPER TAMPILAN
 # ----------------------------------------------------------------------------
-def show(fig, height=420):
-    # Konfigurasi dinamis untuk Plotly berdasarkan Dark/Light mode
-    bg_color = BG_CARD if is_dark else "white"
-    grid_color = "#334155" if is_dark else "#EEF2F7"
-    line_color = "#475569" if is_dark else "#CBD5E0"
-    text_color = "#F8FAFC" if is_dark else "#2E2F32"
-    tick_color = "#94A3B8" if is_dark else "#4A5568"
+def show(fig, height=420, wrap=70):
+    """Tampilkan grafik Plotly sesuai mode tampilan.
+
+    wrap : jumlah karakter maksimum per baris judul (gunakan ~36 untuk grafik setengah lebar).
+           Judul dipecah otomatis, margin atas dihitung dari jumlah baris judul dan keberadaan
+           legenda, sehingga judul, legenda, dan area plot tidak saling menimpa.
+    """
+    T = PLOT
+    raw = (fig.layout.title.text or "") if fig.layout.title is not None else ""
+    raw = str(raw).replace("<b>", "").replace("</b>", "").replace("<br>", " ")
+    lines = textwrap.wrap(raw, width=wrap) or []
+    title_html = "<b>" + "<br>".join(lines) + "</b>" if lines else ""
+
+    # Plotly menampilkan legenda bila ada >= 2 trace yang bernama
+    n_leg = sum(1 for tr in fig.data
+                if getattr(tr, "showlegend", None) is not False and getattr(tr, "name", None))
+    has_legend = n_leg >= 2
+    top = 26 + 20 * max(len(lines), 1) + (40 if has_legend else 0)
 
     fig.update_layout(
-        template="plotly_dark" if is_dark else "plotly_white",
+        template=T["template"],
         height=height,
-        margin=dict(l=10, r=10, t=80, b=10),
-        legend=dict(
-            orientation="h", 
-            yanchor="bottom", 
-            y=1.02, 
-            x=0,
-            bgcolor="rgba(30, 41, 59, 0.8)" if is_dark else "rgba(255,255,255,0.9)",
-            bordercolor=grid_color, 
-            borderwidth=1,
-            font=dict(color=text_color)
-        ),
-        font=dict(family="Inter, sans-serif", size=12, color=text_color),
+        margin=dict(l=12, r=16, t=top, b=14),
         title=dict(
-            font=dict(family="Poppins, sans-serif", size=14, color=text_color, weight="bold"),
-            y=0.98,
-            x=0,
-            xanchor='left',
-            yanchor='top'
+            text=title_html, x=0, xref="container", xanchor="left",
+            y=1, yref="container", yanchor="top", pad=dict(t=14, l=6),
+            font=dict(family="Poppins, sans-serif", size=15, color=T["heading"]),
         ),
-        plot_bgcolor=bg_color,
-        paper_bgcolor=bg_color,
+        showlegend=has_legend,
+        legend=dict(
+            orientation="h", x=0, xanchor="left", y=1.0, yanchor="bottom",
+            title=dict(text=""),
+            bgcolor=T["legend_bg"], bordercolor=T["legend_border"], borderwidth=1,
+            font=dict(family="Inter, sans-serif", size=12, color=T["text"]),
+        ),
+        font=dict(family="Inter, sans-serif", size=12, color=T["text"]),
+        plot_bgcolor=T["paper"],
+        paper_bgcolor=T["paper"],
+        hoverlabel=dict(bgcolor=T["hover_bg"], bordercolor=T["hover_border"],
+                        font=dict(family="Inter, sans-serif", color=T["text"])),
+        modebar=dict(bgcolor="rgba(0,0,0,0)", color=T["tick"], activecolor=T["accent"]),
     )
-    fig.update_xaxes(
-        gridcolor=grid_color, linecolor=line_color, zerolinecolor=grid_color,
-        tickfont=dict(family="Inter, sans-serif", color=tick_color, size=11)
+    axis_style = dict(
+        gridcolor=T["grid"], linecolor=T["axis"], zerolinecolor=T["zero"],
+        tickfont=dict(family="Inter, sans-serif", color=T["tick"], size=11),
+        title_font=dict(family="Inter, sans-serif", color=T["tick"], size=12),
+        title_standoff=8,
+        automargin=True,       # label dan judul sumbu menambah margin sendiri, tidak terpotong
     )
-    fig.update_yaxes(
-        gridcolor=grid_color, linecolor=line_color, zerolinecolor=grid_color,
-        tickfont=dict(family="Inter, sans-serif", color=tick_color, size=11)
-    )
+    if not DARK_MODE:   # batang kuning di latar putih kontrasnya rendah -> beri garis tepi
+        fig.for_each_trace(lambda t: t.update(marker_line_color="#B27B00", marker_line_width=1)
+                           if t.type == "bar" and getattr(t.marker, "color", None) == WALMART_YELLOW else None)
+    fig.update_xaxes(**axis_style)
+    fig.update_yaxes(**axis_style)
+
+    cfg = {"displaylogo": False, "modeBarButtonsToRemove": ["lasso2d", "select2d"]}
     try:
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig, width="stretch", theme=None, config=cfg)
     except Exception:
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, theme=None, config=cfg)
 
 
 def table(df, **kwargs):
@@ -929,25 +1054,10 @@ def simulate(df, uplift_peak, recovery):
 # SIDEBAR
 # ----------------------------------------------------------------------------
 st.sidebar.markdown("## 🛒 Panel Pengaturan")
-
-# Toggle Mode Terang / Gelap
-st.sidebar.markdown("---")
-tema_pilihan = st.sidebar.toggle(
-    "🌙 Mode Gelap (Dark Mode)", 
-    value=(st.session_state.theme == "Dark"),
-    help="Aktifkan untuk tampilan malam hari"
-)
-if tema_pilihan and st.session_state.theme != "Dark":
-    st.session_state.theme = "Dark"
-    st.rerun()
-elif not tema_pilihan and st.session_state.theme != "Light":
-    st.session_state.theme = "Light"
-    st.rerun()
-st.sidebar.markdown("---")
-
 st.sidebar.caption("Pilih berkas data serta filter periode dan toko yang ingin dianalisis.")
 
 with st.sidebar:
+    # Perbaikan: Layout rapi untuk file uploader dan expander
     with st.expander("📂 Sumber Data", expanded=True):
         uploaded = st.file_uploader("Unggah berkas CSV (opsional)", type="csv")
         st.caption(f"Jika tidak diunggah, sistem membaca `{DEFAULT_FILE}` dari folder aplikasi.")
@@ -1021,12 +1131,12 @@ with tab1:
     w = weekly_table(df)
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=w.Date, y=w.Total, mode="lines", name="Total penjualan jaringan",
-                             line=dict(color=WALMART_BLUE, width=3),
-                             fill="tozeroy", fillcolor="rgba(0, 113, 206, 0.15)" if is_dark else "rgba(0, 113, 206, 0.08)"))
+                             line=dict(color=CHART_BLUE, width=3),
+                             fill="tozeroy", fillcolor=FILL_BLUE))
     hol = w[w.Holiday == 1]
     fig.add_trace(go.Scatter(x=hol.Date, y=hol.Total, mode="markers", name="Pekan libur (flag)",
                              marker=dict(color=WALMART_YELLOW, size=13,
-                                         line=dict(color=WALMART_DARK, width=2) if not is_dark else dict(color="#FFFFFF", width=2),
+                                         line=dict(color=INK, width=2),
                                          symbol="circle")))
     fig.update_layout(title="Tren Penjualan Mingguan (Total Semua Toko Terpilih)",
                       yaxis_title="USD", xaxis_title="Tanggal")
@@ -1051,15 +1161,15 @@ with tab1:
         t["Store"] = "Toko " + t.Store.astype(int).astype(str)
         fig = px.bar(t.iloc[::-1], x="Total", y="Store", orientation="h",
                      title="10 Toko dengan Penjualan Tertinggi",
-                     color_discrete_sequence=[WALMART_BLUE])
-        show(fig, 380)
+                     color_discrete_sequence=[CHART_BLUE])
+        show(fig, 380, wrap=40)
     with colB:
         t = ss.tail(10).copy()
         t["Store"] = "Toko " + t.Store.astype(int).astype(str)
         fig = px.bar(t, x="Total", y="Store", orientation="h",
                      title="10 Toko dengan Penjualan Terendah",
                      color_discrete_sequence=[WALMART_GREY])
-        show(fig, 380)
+        show(fig, 380, wrap=40)
 
     interpretasi(
         "Interpretasi",
@@ -1092,12 +1202,14 @@ with tab2:
                 marker_color=[CLASS_COLOR[k] for k in ss.Kelas])
     fig.add_trace(go.Scatter(x=ss.Store.astype(int).astype(str), y=ss.CumShare * 100,
                              name="Kumulatif (%)", yaxis="y2", mode="lines+markers",
-                             line=dict(color="#FFFFFF" if is_dark else WALMART_DARK, width=3),
+                             line=dict(color=INK, width=3),
                              marker=dict(size=7)))
     fig.update_layout(title="Diagram Pareto Penjualan per Toko (biru = A, kuning = B, abu = C)",
                       xaxis=dict(type="category", title="Toko"),
                       yaxis=dict(title="USD"),
-                      yaxis2=dict(overlaying="y", side="right", range=[0, 105], title="Kumulatif (%)"))
+                      yaxis2=dict(overlaying="y", side="right", range=[0, 105], title="Kumulatif (%)",
+                                  showgrid=False))
+    fig.update_xaxes(tickangle=-90)
     show(fig)
 
     k1, k2, k3 = st.columns(3)
@@ -1120,13 +1232,14 @@ with tab2:
     gm = ss.merge(gr_sel[["Store", "G_last"]], on="Store", how="left").dropna(subset=["G_last"])
     if len(gm):
         gm = gm.assign(Pertumbuhan=gm.G_last * 100, Label=gm.Store.astype(int).astype(str))
-        fig = px.scatter(gm, x="Pertumbuhan", y="Rata2", size="Total", color="Kelas", text="Label",
+        fig = px.scatter(gm, x="Pertumbuhan", y="Rata2", size="Total", color="Kelas", text="Label", size_max=30,
                          hover_name="Label", color_discrete_map=CLASS_COLOR,
                          labels={"Pertumbuhan": "Pertumbuhan terakhir (%)",
                                  "Rata2": "Rata-rata penjualan/pekan (USD)"},
                          title="Kuadran Toko: Skala Penjualan vs Pertumbuhan")
         fig.add_vline(x=0, line_dash="dash", line_color=WALMART_RED)
-        fig.update_traces(textposition="top center")
+        fig.update_traces(textposition="top center", textfont=dict(size=10))
+        fig.update_layout(legend_itemsizing="constant")
         show(fig, 480)
         interpretasi(
             "Interpretasi",
@@ -1147,7 +1260,7 @@ with tab2:
     t["Toko"] = t.Store.astype(int).astype(str)
     fig = px.bar(t, x="Toko", y="CV", color_discrete_sequence=[WALMART_YELLOW],
                  title="Volatilitas Penjualan per Toko (CV)")
-    fig.update_xaxes(type="category")
+    fig.update_xaxes(type="category", tickangle=-90)
     show(fig, 340)
 
     interpretasi(
@@ -1192,7 +1305,7 @@ with tab3:
     sdf = pd.DataFrame({"Bulan": [MONTH_ID[m] for m in si.index], "Indeks": si.values * 100,
                         "Arah": np.where(si.values >= 0, "Di atas rata-rata", "Di bawah rata-rata")})
     fig = px.bar(sdf, x="Bulan", y="Indeks", color="Arah",
-                 color_discrete_map={"Di atas rata-rata": WALMART_BLUE,
+                 color_discrete_map={"Di atas rata-rata": CHART_BLUE,
                                      "Di bawah rata-rata": WALMART_GREY},
                  title="Indeks Musiman Bulanan (Penyimpangan vs Rata-rata, %)")
     show(fig, 360)
@@ -1213,8 +1326,8 @@ with tab3:
     w["Tahun"] = w.Year.astype(str)
     fig = px.line(w.sort_values("Week"), x="Week", y="Total", color="Tahun",
                   title="Total Penjualan per Pekan ke-n dalam Tahun",
-                  color_discrete_sequence=[WALMART_BLUE, WALMART_YELLOW,
-                                            "#FFFFFF" if is_dark else WALMART_DARK, WALMART_RED])
+                  color_discrete_sequence=[CHART_BLUE, WALMART_YELLOW,
+                                            INK, WALMART_RED])
     show(fig, 380)
 
     divider()
@@ -1226,9 +1339,11 @@ with tab3:
     if len(hs):
         fig = px.bar(hs.assign(Lift=hs.Lift_Global * 100), x="Event", y="Lift",
                      title="Rata-rata Dampak Pekan Libur vs Pekan Non-Libur (%)",
-                     color_discrete_sequence=[WALMART_BLUE], text="Lift")
-        fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside",
-                          textfont=dict(color=TEXT_MAIN, family="Poppins"))
+                     color_discrete_sequence=[CHART_BLUE], text="Lift")
+        fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside", cliponaxis=False,
+                          textfont=dict(color=INK, family="Poppins"))
+        _lift = hs.Lift_Global * 100
+        fig.update_yaxes(range=[min(0, _lift.min() * 1.3), max(_lift.max() * 1.25, 1)])
         show(fig, 380)
 
         t = hs.copy()
@@ -1284,7 +1399,7 @@ with tab4:
 
     long = drv.melt(id_vars="Faktor", var_name="Metode", value_name="r")
     fig = px.bar(long, x="Faktor", y="r", color="Metode", barmode="group",
-                 color_discrete_sequence=[WALMART_BLUE, WALMART_YELLOW],
+                 color_discrete_sequence=[CHART_BLUE, WALMART_YELLOW],
                  title="Koefisien Korelasi Pearson")
     fig.update_yaxes(range=[-1, 1])
     show(fig, 360)
@@ -1302,14 +1417,14 @@ with tab4:
     with left:
         samp = dd.sample(min(len(dd), 2500), random_state=1)
         fig = px.scatter(samp, x="Unemployment", y="Indeks", opacity=0.35,
-                         color_discrete_sequence=[WALMART_BLUE],
+                         color_discrete_sequence=[CHART_BLUE],
                          title="Pengangguran vs Indeks Penjualan Toko")
         if dd.Unemployment.nunique() > 1:
             k, b = np.polyfit(dd.Unemployment, dd.Indeks, 1)
             xs = np.array([dd.Unemployment.min(), dd.Unemployment.max()])
             fig.add_trace(go.Scatter(x=xs, y=k * xs + b, mode="lines", name="Garis Tren",
                                      line=dict(color=WALMART_RED, width=3)))
-        show(fig, 380)
+        show(fig, 380, wrap=40)
     with right:
         bins = pd.cut(dd.Temperature, [-20, 40, 60, 80, 120],
                       labels=["<40°F", "40-60°F", "60-80°F", ">80°F"])
@@ -1317,7 +1432,7 @@ with tab4:
         tb.columns = ["Suhu", "Indeks"]
         fig = px.bar(tb, x="Suhu", y="Indeks", color_discrete_sequence=[WALMART_YELLOW],
                      title="Indeks Penjualan Menurut Rentang Suhu")
-        show(fig, 380)
+        show(fig, 380, wrap=40)
 
     interpretasi(
         "Interpretasi",
@@ -1443,4 +1558,3 @@ with tab5:
         "Rekomendasi ini bersifat indikatif dan sebaiknya dilengkapi dengan data biaya, "
         "margin, dan konteks operasional sebelum diimplementasikan secara penuh."
     )
-    
