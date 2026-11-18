@@ -1,14 +1,3 @@
-Berikut adalah perbaikan kode secara menyeluruh untuk mendukung **Mode Terang & Gelap (Dark/Light Mode)**. 
-
-**Pendekatan yang Digunakan:**
-1. **CSS Variables (`:root`)**: Alih-alih menulis *hardcode* warna putih di setiap komponen, kita mendefinisikan variabel (seperti `--bg-card`, `--text-main`). Saat tombol sakelar ditekan, sistem hanya perlu mengganti nilai variabel tersebut, sehingga tidak ada warna yang bertabrakan.
-2. **Plotly Dinamis**: Fungsi `show()` telah diperbarui untuk membaca mode saat ini dan menyesuaikan warna *background*, *grid*, dan *font* pada grafik secara otomatis.
-3. **Tombol Toggle di Sidebar**: Menambahkan `st.toggle` yang mengubah `st.session_state.theme` dan memicu Streamlit untuk merender ulang UI dengan palet warna yang sesuai.
-4. **Kotak Interpretasi & Catatan**: Warna *background* dan teks pada kotak ini juga disesuaikan agar tetap kontras dan enak dibaca di mode gelap.
-
-Berikut adalah kode lengkapnya:
-
-```python
 """
 Walmart Business Intelligence - Decision Support Dashboard
 ===========================================================
